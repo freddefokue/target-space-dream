@@ -1,0 +1,50 @@
+{
+  "experiment": "Stanton-inspired CIFAR-100 ResNet-20-GN1 target-space DREAM",
+  "claim_boundary": "One seed; exact transfer-set interpolation is not unseen-input fidelity.",
+  "teacher_test_accuracy": 0.6374,
+  "exact_endpoint_scaling": [
+    {
+      "d": 8,
+      "train_rms": 2.5635155568802317e-15,
+      "accepted_stages": 36,
+      "jacobian_builds": 368,
+      "endpoint_displacement_l2": 7.459749918198565,
+      "test_teacher_agreement": 0.0158,
+      "test_centered_logit_rms": 6.18200378045182
+    },
+    {
+      "d": 16,
+      "train_rms": 3.073862076592294e-15,
+      "accepted_stages": 24,
+      "jacobian_builds": 224,
+      "endpoint_displacement_l2": 9.912040633176089,
+      "test_teacher_agreement": 0.02,
+      "test_centered_logit_rms": 5.839712060348193
+    },
+    {
+      "d": 64,
+      "train_rms": 1.189620552438992e-13,
+      "accepted_stages": 32,
+      "jacobian_builds": 547,
+      "endpoint_displacement_l2": 125.77813746218395,
+      "test_teacher_agreement": 0.0245,
+      "test_centered_logit_rms": 5.899367545665691
+    }
+  ],
+  "d64_shared_target_branch_comparison": {
+    "target_t": 0.00390625,
+    "one_step": {
+      "step": 0.00390625,
+      "endpoint_displacement_l2": 36.776240313218736,
+      "condition_proxy": 626491.1345810842,
+      "heldout_target_rms": 0.056038385519799186
+    },
+    "sixteen_steps": {
+      "step": 0.000244140625,
+      "endpoint_displacement_l2": 5.485983752329712,
+      "condition_proxy": 52398.23604306788,
+      "heldout_target_rms": 0.0314793522582191
+    }
+  }
+}
+
