@@ -1,0 +1,42 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+build/
+dist/
+
+# Large or machine-specific research artifacts.
+results/
+checkpoints/
+inputs/
+logs/
+data/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.npy
+*.npz
+
+# LaTeX build products. Source and final PDFs may still be committed explicitly.
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.latexmain
+*.lof
+*.log
+*.lot
+*.out
+*.synctex.gz
+*.thm
+*.toc
+
+# Editors and operating systems.
+.DS_Store
+.idea/
+.vscode/
+
