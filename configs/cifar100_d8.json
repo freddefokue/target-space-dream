@@ -1,0 +1,12 @@
+{
+  "experiment": "exact small-D CIFAR-100 target-space continuation",
+  "transfer_examples": 8,
+  "teacher_fraction_in_initial_student": 0.25,
+  "initial_target_step": 0.25,
+  "minimum_target_step": 0.000244140625,
+  "maximum_correctors_per_interval": 8,
+  "pooled_root_rms": 1e-9,
+  "maximum_sample_root_rms": 3e-9,
+  "precision": "float64"
+}
+

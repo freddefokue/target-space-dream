@@ -1,0 +1,8 @@
+{
+  "experiment": "underdetermined linear smoke test",
+  "residual_coordinates": 12,
+  "parameters": 24,
+  "initial_target_step": 0.5,
+  "seed": 0
+}
+
