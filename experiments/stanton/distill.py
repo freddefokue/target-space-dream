@@ -449,6 +449,9 @@ def main() -> None:
         index_event(run_id, "resume", step=step, fe=counter.fe)
         print(f"{run_id}: resumed at step {step}", flush=True)
     else:
+        # A crash before the first checkpoint leaves partial logs; a fresh start replaces them.
+        truncate_metrics(metrics_path, -1)
+        (run_dir / "schedule_events.jsonl").unlink(missing_ok=True)
         write_json(run_dir / "config.json", record)
         index_event(run_id, "start", **{k: record[k] for k in ("lam", "seed", "budget_name")},
                     config=config["name"], init_from=record["init_from"])
