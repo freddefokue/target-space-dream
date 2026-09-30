@@ -1,0 +1,17 @@
+{
+  "arm": "A2",
+  "batch": 128,
+  "inherits": "A1-7",
+  "lr": 0.05,
+  "lr_min": 1e-06,
+  "momentum": 0.9,
+  "name": "A2-3",
+  "nesterov": true,
+  "optimizer": "sgd",
+  "schedule": {
+    "kind": "fixed",
+    "phi": 0.75
+  },
+  "warmup": 0.1,
+  "weight_decay": 0.0001
+}

@@ -1,0 +1,19 @@
+{
+  "arm": "A5",
+  "batch": 128,
+  "inherits": "A1-7",
+  "lr": 0.05,
+  "lr_min": 1e-06,
+  "momentum": 0.9,
+  "name": "A5-6",
+  "nesterov": true,
+  "optimizer": "sgd",
+  "schedule": {
+    "kind": "annealing_kd",
+    "note": "Jafari et al. 2021: MSE(f_S, Phi(T) f_T), T = 10..1 in ten stages over 50% of the budget, then T = 1 (Amendment 3)",
+    "phi": 0.5,
+    "tau_max": 10
+  },
+  "warmup": 0.1,
+  "weight_decay": 0.0001
+}

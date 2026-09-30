@@ -1,0 +1,18 @@
+{
+  "arm": "A5",
+  "batch": 128,
+  "inherits": "A1-7",
+  "lr": 0.05,
+  "lr_min": 1e-06,
+  "momentum": 0.9,
+  "name": "A5-3",
+  "nesterov": true,
+  "optimizer": "sgd",
+  "schedule": {
+    "T0": 4.0,
+    "kind": "geometric",
+    "phi": 0.75
+  },
+  "warmup": 0.1,
+  "weight_decay": 0.0001
+}

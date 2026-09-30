@@ -1,0 +1,19 @@
+{
+  "anchor": {
+    "mu": 0.1,
+    "until": 0.3
+  },
+  "arm": "A1",
+  "batch": 128,
+  "inherits": "A1-7",
+  "lr": 0.05,
+  "lr_min": 1e-06,
+  "momentum": 0.9,
+  "name": "A1-anchor-mu0.1",
+  "nesterov": true,
+  "note": "A1-1 plus linear lr warmup over the first 10% (Amendment 3)",
+  "optimizer": "sgd",
+  "temperature": 1.0,
+  "warmup": 0.1,
+  "weight_decay": 0.0001
+}

@@ -1,0 +1,20 @@
+{
+  "arm": "A6",
+  "batch": 128,
+  "inherits": "A1-7",
+  "lr": 0.05,
+  "lr_min": 1e-06,
+  "momentum": 0.9,
+  "name": "A6-5",
+  "nesterov": true,
+  "optimizer": "sgd",
+  "schedule": {
+    "kind": "adaptive",
+    "threshold": 0.15
+  },
+  "snapshots": {
+    "spacing": 10
+  },
+  "warmup": 0.1,
+  "weight_decay": 0.0001
+}
