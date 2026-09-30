@@ -3,7 +3,8 @@
 
 Recipe (brief §3): Nesterov SGD, momentum 0.9, lr 0.1 cosine to 0 (per step), weight decay 5e-4
 on all parameters, batch 128, 200 epochs, crop+flip augmentation, all 50k training images, seed 0.
-Resumable from ``ckpt.pt``. The test split is never touched here.
+Weights are saved at epoch 0 and every 5 epochs to ``snapshots/epoch_XXX.pt``. Resumable from
+``ckpt.pt``. The test split is never touched here.
 """
 
 from __future__ import annotations
@@ -24,6 +25,8 @@ from dream.models import ResNet20GN1
 TEACHER_DIR = RUNS / "teacher_seed0"
 TEACHER_STATE = TEACHER_DIR / "teacher_state.pt"
 TEACHER_LOGITS = TEACHER_DIR / "teacher_logits.pt"
+SNAPSHOTS = TEACHER_DIR / "snapshots"
+SNAPSHOT_EVERY = 5
 PROVIDED = Path("/workspace/inputs/teacher_state.pt")
 
 
@@ -79,7 +82,8 @@ def main() -> None:
               "schedule": "cosine per step to 0", "weight_decay": 5e-4, "batch": batch,
               "epochs": epochs, "seed": 0, "augmentation": "pad4 crop32 + hflip (GPU)",
               "preprocessing": "x/127.5-1", "precision": "float32, TF32 off",
-              "splits": split_digest(), "git": git_commit()}
+              "splits": split_digest(), "git": git_commit(),
+              "snapshots": f"epoch 0 and every {SNAPSHOT_EVERY} epochs in {SNAPSHOTS}"}
     write_json(TEACHER_DIR / "config.json", config)
     if ckpt_path.exists():
         state = torch.load(ckpt_path, map_location="cuda", weights_only=False)
@@ -92,6 +96,8 @@ def main() -> None:
         print("resumed at step", step, flush=True)
     else:
         index_event("teacher_seed0", "start", config=config)
+        SNAPSHOTS.mkdir(parents=True, exist_ok=True)
+        torch.save(model.state_dict(), SNAPSHOTS / "epoch_000.pt")
 
     start = time.time()
     while step < total_steps:
@@ -108,6 +114,8 @@ def main() -> None:
             epoch = step // steps_per_epoch
             row = {"step": step, "epoch": epoch, "lr": lr, "loss_sampled": float(loss),
                    "wall": wall_before + time.time() - start}
+            if epoch % SNAPSHOT_EVERY == 0:
+                torch.save(model.state_dict(), SNAPSHOTS / f"epoch_{epoch:03d}.pt")
             if epoch % 10 == 0 or epoch == epochs:
                 row["val_accuracy"] = accuracy(logits_on(model, data.val), data.val.labels)
                 model.train()
@@ -124,7 +132,7 @@ def main() -> None:
     wall = wall_before + time.time() - start
     summary.update({"wall_hours": wall / 3600, "config": config})
     write_json(TEACHER_DIR / "final.json", summary)
-    total = ledger_add("teacher_seed0", wall / 3600, arguments.concurrency, "teacher training")
+    total = ledger_add("teacher_seed0", wall / 3600, arguments.concurrency, "teacher training v2 with snapshots (Amendment 3)")
     index_event("teacher_seed0", "end", summary=summary)
     print("teacher done", summary, "ledger total GPU-h", round(total, 3), flush=True)
 

@@ -45,6 +45,8 @@ Logged about every 2% of each run's budget, and at the end:
   temperature 1 on validation, in nats.
 - Secondary: validation accuracy against labels; agreement and KL on the train-subset; parameter
   displacement `‖θ − θ_init‖₂`; FE consumed, wall-clock time, GPU-hours.
+- Parameter distance to the teacher `‖θ − θ_T‖₂`, logged next to `‖θ − θ_init‖₂` in every run
+  (required for λ > 0; logged for all runs) (Amendment 3).
 - A run's result is its metrics at the end of its budget (the last evaluation). No early-stopping
   or best-checkpoint selection.
 
@@ -92,9 +94,11 @@ Loss `KL(softmax(f_T) ‖ softmax(f_S))` unless stated.
 | A1-4 | SGD-Nesterov | 0.05 | 1e-4 | Stanton/gnosis loss at τ = 4: `τ²·CE(softmax(f_T/τ), softmax(f_S/τ))` |
 | A1-5 | Adam | 1e-3 | 0 | τ = 1 |
 | A1-6 | Adam | 3e-4 | 0 | τ = 1 |
+| A1-7 | SGD-Nesterov | 0.05 | 1e-4 | τ = 1, **linear lr warmup** from 0 to the peak over the first 10% of the budget, then cosine to 1e-6 (Amendment 3) |
 
-"A1's best optimizer" (used by A2 and A5) means the optimizer, lr and weight decay of the selected
-A1 config; the loss temperature is not inherited.
+"A1's best optimizer" (used by A2 and A5) means the optimizer, lr, weight decay and lr schedule
+(including warmup, if A1-7 is selected) of the selected A1 config; the loss temperature is not
+inherited. A1 has 7 configurations, one more than the brief's limit of 6 (Amendment 3).
 
 ### A2: first-order, moving target
 
@@ -154,7 +158,17 @@ A1's best optimizer. `T = T0^(1 − s/φ)` for s ≤ φ, then T = 1.
 | # | T0 | φ |
 |---|---:|---:|
 | A5-1..3 | 4 | 0.25, 0.5, 0.75 |
-| A5-4..6 | 16 | 0.25, 0.5, 0.75 |
+| A5-4..5 | 16 | 0.25, 0.5 |
+| A5-6 | Annealing-KD replication (below) | |
+
+A5-6 (Amendment 3) follows Jafari et al. (2021), "Annealing Knowledge Distillation", CIFAR setup:
+loss `mean((f_S − Φ(T)·f_T)²)` over batch and classes (MSE on logits, no softmax), with
+`Φ(T) = 1 − (T − 1)/τ_max`, τ_max = 10, and T an integer stepping down from 10 to 1 in ten equal
+stages over the first 50% of the budget (160 of their 320 epochs), followed by a final phase at
+T = 1 (Φ = 1) for the remaining 50%. Deviations from the paper: their stage II fine-tunes on hard
+labels with cross-entropy, ours stays label-free on the Φ = 1 MSE loss (as Fred specified; this
+study never uses labels); we do not select the best checkpoint on validation (§4); the optimizer is
+A1's best (fairness protocol), not their SGD lr 0.1, wd 1e-4 with the TAKD schedule.
 
 ## 7. Run plan and seeds
 
@@ -166,6 +180,13 @@ A1's best optimizer. `T = T0^(1 − s/φ)` for s ≤ φ, then T = 1.
    report. (Amendment 1: λ = 0.5 added and used as the control; 0.4 kept in the sweep.)
 4. Finals: seeds 1 and 2, λ ∈ {0, 0.25}, every arm.
 5. Test evaluation of the 3 seeds × 2 λ × 5 arms final models, once.
+
+Hand-off diagnostic (Amendment 3; not part of the decision rule): after the λ sweep, the seed-0
+endpoints of A2 and A4 at λ ∈ {0, 0.25} are continued with A1's selected configuration for
+`B_full/4` (fresh optimizer state, peak lr `lr·(1−λ)` with the run's original λ, the A1 schedule
+over `B_full/4`, teacher target at τ = 1). As the control, A1's own endpoints at the same λ are
+continued identically. Reported: validation agreement, KL and train-subset agreement after the
+hand-off, next to the values before it.
 
 Seeds are fixed as above. No run is discarded; failed, diverged or crashed-then-resumed runs
 are reported as such.
@@ -220,3 +241,19 @@ GPU work is 3.2 FE (as at batch ≥ 512). Eager ratios would raise `B_full` from
 ≈6.2·10⁷ FE and give the large-batch Gauss–Newton arms ≈1.5× more real GPU compute than the
 batch-128 first-order arms. Eager timings stay in `compute_calibration.json` for reference, and
 wall-clock time is reported per run.
+
+### Amendment 3 (2026-09-30, before any tuning run; requested by Fred)
+
+1. Teacher retrained with the same recipe and seed, saving weights at epoch 0 and every 5 epochs to
+   `/workspace/runs/teacher_seed0/snapshots/`. It is the only teacher from now on. The first
+   teacher (65.72% validation accuracy) is kept at `/workspace/runs/teacher_seed0_v1/` for
+   reference, with the two Phase 1 sanity runs made against it (archived under
+   `/workspace/runs/teacher_v1_runs/`). The two sanity runs are repeated against the new teacher.
+   Because training is not bitwise deterministic, the new teacher differs slightly from the first.
+2. A1 grid: A1-7 added (Stanton's settings plus linear warmup over the first 10% of the budget).
+   Reason: a continuation effect has to beat warmup to count. Warmup enters the comparison through
+   A1's tuning (the selected A1 config is the best of seven, warmup included).
+3. A5-6 replaced by a faithful Annealing-KD configuration (was T0 = 16, φ = 0.75).
+4. `‖θ − θ_T‖₂` logged over training.
+5. Hand-off diagnostic added to §7.
+

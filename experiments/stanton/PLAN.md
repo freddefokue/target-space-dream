@@ -160,3 +160,7 @@ reproduce the step and FE trajectory exactly. Seed replicates capture this noise
 - D9 (Amendment 1). Before tuning, pick the cheapest exact GGN product among jvp+vjp, linearize and
   reverse-over-reverse; also report a secondary compute count with JVP = 2 FE.
 - D10. Commit at least hourly, each commit followed by the backup bundle.
+- D11 (Amendment 3). Teacher retrained with snapshots every 5 epochs; the first teacher is
+  archived as `teacher_seed0_v1`; Phase 1 sanity runs repeated.
+- D12 (Amendment 3). A1-7 (warmup) added; A5-6 is an Annealing-KD replication; `‖θ − θ_T‖₂`
+  logged; hand-off diagnostic after the λ sweep (≈0.5 GPU-h).
