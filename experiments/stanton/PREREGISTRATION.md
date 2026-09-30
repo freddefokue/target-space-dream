@@ -240,7 +240,9 @@ uses the 1× sweep runs' endpoints.
 
 Patience check at λ = 0 (Amendment 7; not part of the decision rule): as the Amendment 6 check,
 at λ = 0, seed 0, for A1-7, A2-3 and A5-6 at `4·B_full` (validation and 50k clean-train metrics
-against compute), next to the 1× λ-sweep runs at λ = 0.
+against compute), next to the 1× λ-sweep runs at λ = 0. Fred's criterion for pursuing this line
+further (recorded in advance, see Amendment 7): A2-3 or A5-6 at ≥ 95% train agreement and A1-7 at
+least 5 points lower, all at the end of `4·B_full`.
 
 Anchor diagnostic (Amendment 4; not part of the decision rule): at λ = 0.25, seed 0, `B_full`,
 A1's selected config plus `(μ(s)/2)·‖θ − θ_init‖²` with `μ(s) = μ·max(0, 1 − s/0.3)` (linear decay
@@ -369,4 +371,11 @@ Patience check at λ = 0 for A1-7, A2-3 and A5-6 at `4·B_full` (§7). Fred's me
 recorded as an additional amendment. Written before these runs existed and before I had looked at
 any λ = 0 result of the λ sweep. Cost ≈3.5 GPU-h; projected total with it ≈32 GPU-h (≈36 with a
 15% margin) of the 40-hour cap, so all three runs are made (Fred's fallback: A1-7 and A5-6 only).
+
+Addendum (2026-09-30, Fred; recorded before any λ = 0 patience run had started): criterion for
+pursuing this line further, **not part of the decision rule**. It is met if A2-3 or A5-6 reaches
+at least 95.0% train agreement (all 50k distillation images, no augmentation, final weights at the
+end of `4·B_full`) at λ = 0, and A1-7's train agreement at the end of its `4·B_full` run is at
+least 5.0 percentage points lower than that arm's. Both qualifying arms are reported if both
+qualify.
 
