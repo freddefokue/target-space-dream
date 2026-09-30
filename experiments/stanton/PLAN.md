@@ -72,7 +72,7 @@ experiments/stanton/
   accounting.py               FE counter, calibration table, run index, budget ledger
   calibrate.py                writes compute_calibration.json
   distill.py                  --arm A1..A5 --config ... --lam ... --seed ... --budget full|tune|<FE>
-  queue.py                    sequential/concurrent run queue for tmux, resumable
+  run_queue.py                sequential/concurrent run queue for tmux, resumable
   plot.py                     agreement/KL vs FE, final agreement vs λ
   PLAN.md, PREREGISTRATION.md, REPORT.md, compute_calibration.json, RESULTS.md (Phase 4)
 configs/stanton/*.json        one file per tuning config and per selected final config
@@ -118,26 +118,33 @@ with 1–4 concurrent processes and picks the level before per-run speed collaps
 
 ## 5. Compute estimate
 
-`B_full` ≈ 200 epochs × 50,000 images × (≈3.2 FE fwd+bwd + 1 FE teacher) ≈ 4.2·10⁷ image-FE.
-At ≈60k image-FE/s that is ≈12 min of pure GPU work; with Python overhead at batch 128 and
-evaluation I budget **0.4 GPU-h per full run** and **0.1 GPU-h per tuning run**.
+Original Phase 0 estimate: ≈26 GPU-h (0.4 GPU-h per full run). **Revised after Phase 1
+calibration (2026-09-30):**
+
+- `B_full` = 4.468 FE/image × 200 × 50,000 = **4.47·10⁷ FE** (CUDA-graph ratios, Amendment 2).
+- A1 at batch 128 runs at 61 steps/s alone, 74 steps/s aggregate with 2 concurrent runs (3 or 4
+  add nothing). A full first-order run is 78,200 steps: ≈0.30 GPU-h at concurrency 2.
+- Gauss–Newton arms: unknown until Phase 2; assumed 0.35 GPU-h per full run.
 
 | Item | Runs | GPU-h |
 |---|---:|---:|
-| Teacher training | 1 | 0.4 |
-| Phase 1 calibration + A1 sanity (λ 0.5, 0.25 at tuning budget) | 2 | 0.5 |
-| Phase 2 smoke tests and debugging | — | 1.5 |
-| Phase 3 tuning: 5 arms × 6 configs at `B_full/4` | 30 | 3.0 |
-| Phase 3 λ sweep: 5 arms × 5 λ, seed 0 | 25 | 10.0 |
-| Phase 4 finals: 5 arms × 2 λ × seeds 1, 2 | 20 | 8.0 |
-| Test evaluation, plots | — | 0.1 |
-| **Subtotal** | | **23.5** |
-| Contingency (+20%) | | 4.7 |
-| **Projected total** | | **≈ 28 of 40** |
+| Teacher training (actual) | 1 | 0.23 |
+| Phase 1 smoke, resume, concurrency tests (actual) | — | 0.17 |
+| Phase 1 sanity (λ 0.5, 0.25 at tuning budget) | 2 | 0.15 |
+| Phase 2 smoke tests, GGN-variant timing, debugging | — | 1.5 |
+| Phase 3 tuning: 5 arms × 6 configs at `B_full/4` | 30 | 2.5 |
+| Phase 3 λ sweep: 5 arms × 5 λ, seed 0 | 25 | 8.0 |
+| Phase 4 finals: 5 arms × 2 λ × seeds 1, 2 | 20 | 6.5 |
+| **Subtotal** | | **19.1** |
+| Contingency (+25%) | | 4.8 |
+| **Projected total** | | **≈ 24 of 40** |
 
-GPU-hours mean pod wall-clock while the GPU is occupied by this project (concurrent runs share
-the hour). I will re-estimate after the Phase 1 calibration and ask before launching anything
-that would cross the cap.
+GPU-hours mean pod wall-clock while the GPU is occupied by this project; a run's ledger charge is
+its wall-clock divided by the number of runs sharing the GPU.
+
+Reproducibility note: cuDNN kernels are not bitwise deterministic here, so two identical runs
+differ slightly (0.5 pp validation agreement after 2% of the budget in a smoke test). Resumed runs
+reproduce the step and FE trajectory exactly. Seed replicates capture this noise.
 
 ## 6. Decisions (Fred, 2026-09-30)
 
