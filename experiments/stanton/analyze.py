@@ -231,18 +231,108 @@ def sweep_figures() -> list[Path]:
     return paths
 
 
+RESTORATION = {
+    "first_order": "model, optimizer state (momentum/Adam moments), data-sampler CUDA generator "
+                   "state with epoch order and cursor, FE counter (hence the lr schedule, a "
+                   "function of the FE fraction), t/T schedule state: restored exactly",
+    "gauss_newton": "parameters, previous CG step (warm start), LM damping, data-sampler "
+                    "generator state, FE counter, t schedule state: restored exactly",
+}
+
+
+def resumes() -> None:
+    """Every run that was resumed from a checkpoint or restarted after a crash or kill."""
+
+    events: dict[str, list[dict]] = {}
+    for line in (RUNS / "index.jsonl").read_text().splitlines():
+        row = json.loads(line)
+        events.setdefault(row["run_id"], []).append(row)
+    print("| run | resumed from checkpoint (step) | fresh restarts | finished | restored |")
+    print("|---|---|---:|---|---|")
+    for run_id, rows in sorted(events.items()):
+        config = RUNS / run_id / "config.json"
+        if not config.exists() or "config" not in json.loads(config.read_text()):
+            continue  # smoke tests live under runs/smoke; the teacher has its own record
+        archived = [i for i, row in enumerate(rows) if row["event"] == "archived"]
+        rows = rows[archived[-1] + 1:] if archived else rows  # a new run under a reused id
+        kinds = [row["event"] for row in rows]
+        resumed = [str(row.get("step")) for row in rows if row["event"] == "resume"]
+        restarts = max(0, kinds.count("start") - 1)
+        if not resumed and not restarts:
+            continue
+        arm = json.loads(config.read_text())["config"]["arm"]
+        kind = "gauss_newton" if arm in ("A3", "A4") else "first_order"
+        print(f"| {run_id} | {', '.join(resumed) or '-'} | {restarts} | "
+              f"{'yes' if 'end' in kinds else 'no'} | {RESTORATION[kind]} |")
+    print("\nNot restored: work done after the last checkpoint is recomputed, and because cuDNN "
+          "kernels are not bitwise deterministic the recomputed steps are not bit-identical to "
+          "the lost ones. A6's cache of snapshot monitor logits is rebuilt (and charged again). "
+          "A fresh restart (crash before the first checkpoint) repeats the run from its start "
+          "with the same seeds.")
+
+
+def train_table(budget: str = "full") -> None:
+    """50k clean-train agreement and KL (train_eval.py) for every arm at every λ."""
+
+    members = [r for r in runs(budget) if (r["dir"] / "train_full_eval.json").exists()]
+    lambdas = sorted({r["final"]["lam"] for r in members})
+    print("| arm | " + " | ".join(f"λ={lam:g} agree / KL" for lam in lambdas) + " |")
+    print("|---|" + "---:|" * len(lambdas))
+    for arm in ARMS:
+        cells = []
+        for lam in lambdas:
+            found = [r for r in members if arm_of(r) == arm and r["final"]["lam"] == lam
+                     and "anchor" not in config_of(r)]
+            if found:
+                result = json.loads((found[0]["dir"] / "train_full_eval.json").read_text())
+                cells.append(f"{100 * result['train_agreement']:.2f}% / {result['train_kl']:.3f}")
+            else:
+                cells.append("–")
+        if any(cell != "–" for cell in cells):
+            print(f"| {arm} | " + " | ".join(cells) + " |")
+
+
+def train_agreement_figure() -> Path | None:
+    """Train agreement (50k, no augmentation) against λ per arm, cf. Stanton et al. Fig. 6(b)."""
+
+    members = [r for r in runs("full") if (r["dir"] / "train_full_eval.json").exists()
+               and "anchor" not in config_of(r)]
+    if not members:
+        return None
+    figure, axis = plt.subplots(figsize=(5.2, 3.4))
+    for index, arm in enumerate(ARMS):
+        points = sorted((r["final"]["lam"], json.loads(
+            (r["dir"] / "train_full_eval.json").read_text())["train_agreement"])
+            for r in members if arm_of(r) == arm)
+        if points:
+            color = CATEGORICAL[index]
+            axis.plot([p[0] for p in points], [p[1] for p in points], color=color, marker="o",
+                      markersize=5, label=arm, linestyle="--" if arm == "A1-MSE" else "-")
+    axis.set_xlabel("λ (θ_init = λ θ_T + (1 − λ) θ_R)")
+    axis.set_ylabel("train agreement (50k, no augmentation)")
+    axis.set_title("Train agreement vs λ (cf. Stanton et al. Fig. 6b; 200-epoch-equivalent "
+                   "budget, λ ∈ {0, .1, .25, .4, .5})", fontsize=8)
+    axis.legend(fontsize=7)
+    figure.tight_layout()
+    path = FIGURES / "sweep_train_agreement_vs_lambda.png"
+    figure.savefig(path, dpi=150)
+    plt.close(figure)
+    return path
+
+
 def figures() -> None:
     FIGURES.mkdir(exist_ok=True)
     style()
-    paths = [tuning_distance_figure(), *sweep_figures()]
-    print("\n".join(str(path) for path in paths))
+    paths = [tuning_distance_figure(), *sweep_figures(), train_agreement_figure()]
+    print("\n".join(str(path) for path in paths if path))
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("what", choices=["tuning", "figures"])
+    parser.add_argument("what", choices=["tuning", "figures", "resumes", "train"])
     arguments = parser.parse_args()
-    {"tuning": tuning, "figures": figures}[arguments.what]()
+    {"tuning": tuning, "figures": figures, "resumes": resumes,
+     "train": train_table}[arguments.what]()
 
 
 if __name__ == "__main__":
