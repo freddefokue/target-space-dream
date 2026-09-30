@@ -1,0 +1,17 @@
+{
+  "arm": "A1",
+  "batch": 128,
+  "group": "A1-MSE",
+  "inherits": "A1-7",
+  "loss": "mse",
+  "lr": 0.05,
+  "lr_min": 1e-06,
+  "momentum": 0.9,
+  "name": "A1MSE-2",
+  "nesterov": true,
+  "note": "A1-7 with A5-6's logit MSE at T = 1, no annealing (Amendment 5)",
+  "optimizer": "sgd",
+  "temperature": 1.0,
+  "warmup": 0.1,
+  "weight_decay": 0.0001
+}

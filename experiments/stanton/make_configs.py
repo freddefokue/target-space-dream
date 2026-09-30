@@ -72,6 +72,11 @@ def main() -> None:
                                      "schedule": {"kind": "adaptive", "threshold": threshold}},
                   arguments.out)
         anchored = {k: v for k, v in selected.items() if k != "name"}
+        for index, lr in enumerate((0.02, 0.05, 0.1), start=1):
+            write(f"{p}A1MSE-{index}", {**anchored, "inherits": arguments.a1, "group": "A1-MSE",
+                                        "lr": lr, "loss": "mse",
+                                        "note": "A1-7 with A5-6's logit MSE at T = 1, no "
+                                                "annealing (Amendment 5)"}, arguments.out)
         for mu in (0.01, 0.1):
             write(f"{p}A1-anchor-mu{mu:g}", {**anchored, "inherits": arguments.a1,
                                              "anchor": {"mu": mu, "until": 0.3}}, arguments.out)

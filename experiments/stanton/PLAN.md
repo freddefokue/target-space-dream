@@ -164,3 +164,6 @@ reproduce the step and FE trajectory exactly. Seed replicates capture this noise
   archived as `teacher_seed0_v1`; Phase 1 sanity runs repeated.
 - D12 (Amendment 3). A1-7 (warmup) added; A5-6 is an Annealing-KD replication; `‖θ − θ_T‖₂`
   logged; hand-off diagnostic after the λ sweep (≈0.5 GPU-h).
+- D13 (Amendment 5). 50k clean-train agreement and KL for selected tuning configs, sweep and final
+  seeds (`train_eval.py`), reported instead of train loss; A1-MSE diagnostic arm; list of resumed
+  runs with restoration status.

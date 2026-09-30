@@ -47,6 +47,11 @@ Logged about every 2% of each run's budget, and at the end:
   displacement `‖θ − θ_init‖₂`; FE consumed, wall-clock time, GPU-hours.
 - Parameter distance to the teacher `‖θ − θ_T‖₂`, logged next to `‖θ − θ_init‖₂` in every run
   (required for λ > 0; logged for all runs) (Amendment 3).
+- Train-set fidelity (Amendment 5): top-1 agreement and mean `KL(p_T ‖ p_S)` at temperature 1 on
+  all 50,000 distillation images without augmentation, for the final weights of each arm's
+  selected tuning config, every full-budget run and every final-seed run. This KL is reported
+  instead of the training loss, which differs across arms (e.g. logit MSE in A5-6). Evaluation
+  time is charged to the ledger (not to the runs' FE budgets).
 - A run's result is its metrics at the end of its budget (the last evaluation). No early-stopping
   or best-checkpoint selection.
 
@@ -215,6 +220,14 @@ As the control, A1's own endpoints at the same λ get both treatments. Reported:
 agreement, KL, train-subset agreement and `‖θ − θ_T‖₂` after the hand-off, next to the values
 before it.
 
+A1-MSE diagnostic (Amendment 5; not part of the decision rule): A1's selected config (A1-7) with
+the loss replaced by the logit MSE that A5-6 uses at T = 1, `mean((f_S − f_T)²)`, without
+annealing. Only the learning rate is tuned, lr ∈ {0.02, 0.05, 0.1} (0.05 is A1-7's and A5-6's),
+at λ = 0.25, seed 0, `B_full/4`, selected by the rule of §6. The selected config then runs at
+`B_full` for λ ∈ {0, 0.1, 0.25, 0.4, 0.5} (seed 0) and in the final seeds 1 and 2 at
+λ ∈ {0, 0.25}; its test results are reported next to the decision rule but do not enter it.
+Purpose: separate the annealing effect from the loss effect in A5-6.
+
 Anchor diagnostic (Amendment 4; not part of the decision rule): at λ = 0.25, seed 0, `B_full`,
 A1's selected config plus `(μ(s)/2)·‖θ − θ_init‖²` with `μ(s) = μ·max(0, 1 − s/0.3)` (linear decay
 to 0 over the first 30% of the budget), μ ∈ {0.01, 0.1}. It tests whether merely staying close to
@@ -311,4 +324,21 @@ Gauss–Newton runs 8 at a time.
    μ·‖θ − θ_init‖ is then ≈0.1 and ≈1 at the displacement of 10 that A1 reaches early at λ = 0.25,
    i.e. a moderate and a strong pull relative to the distillation gradient).
 5. Every Phase 3 report shows the distance-to-teacher curves of all λ > 0 runs of every arm.
+
+### Amendment 5 (2026-09-30 20:26, before any A1-MSE run; requested by Fred)
+
+Written before any A1-MSE run existed and before any full-budget result of the λ sweep was
+inspected.
+
+1. Train-set evaluation on all 50k distillation images without augmentation (agreement and
+   `KL(p_T ‖ p_S)`), for the selected tuning configs, the λ sweep and the final seeds; this KL
+   replaces "train loss" in all reports.
+2. A1-MSE diagnostic arm (A1-7 with A5-6's logit MSE at T = 1, no annealing), lr ∈ {0.02, 0.05,
+   0.1} at the tuning budget, then the λ sweep and the final seeds at λ ∈ {0, 0.25}. Not part of
+   the decision rule.
+3. Reports list every run resumed after a crash or kill and state whether its optimizer, lr
+   schedule and RNG states were restored exactly.
+
+Note: the 50k train evaluation of the selected A1, A2, A5 and A6 tuning configs was run
+(Fred's request) shortly before this amendment was written; no A1-MSE result existed.
 

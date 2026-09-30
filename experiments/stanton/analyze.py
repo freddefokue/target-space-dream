@@ -24,7 +24,7 @@ from common import HERE, RUNS, write_json  # noqa: E402
 
 FIGURES = HERE / "figures"
 SELECTION = HERE / "tuning_selection.json"
-ARMS = ["A1", "A2", "A3", "A4", "A5", "A6"]
+ARMS = ["A1", "A2", "A3", "A4", "A5", "A6", "A1-MSE"]
 # Reference categorical palette (dataviz skill, light mode), fixed order, never cycled.
 CATEGORICAL = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7",
                "#e34948"]
@@ -67,7 +67,10 @@ def runs(budget: str, seed: int | None = 0) -> list[dict]:
 
 
 def arm_of(run: dict) -> str:
-    return run["final"]["config"]["arm"]
+    """The arm, or a diagnostic group such as A1-MSE that shares an arm's code path."""
+
+    config = run["final"]["config"]
+    return config.get("group", config["arm"])
 
 
 def config_of(run: dict) -> str:

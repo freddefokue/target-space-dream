@@ -201,6 +201,8 @@ class Distiller:
     def loss(self, target: torch.Tensor, student_logits: torch.Tensor) -> torch.Tensor:
         if self.arm == "A5" and self.config["schedule"]["kind"] == "annealing_kd":
             return F.mse_loss(student_logits, target)
+        if self.config.get("loss") == "mse":  # A1-MSE diagnostic (Amendment 5)
+            return F.mse_loss(student_logits, target)
         if self.arm == "A1":
             tau = float(self.config.get("temperature", 1.0))
             return tau**2 * softmax_kl(target / tau, student_logits / tau)
