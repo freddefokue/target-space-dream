@@ -142,8 +142,7 @@ def tuning_distance_figure() -> Path:
 
     tuned = [r for r in runs("tune") if r["final"]["lam"] == 0.25]
     arms = [arm for arm in ARMS if any(arm_of(r) == arm for r in tuned)]
-    figure, axes = plt.subplots(1, len(arms), figsize=(3.2 * len(arms), 3.0), sharey=True,
-                                squeeze=False)
+    figure, axes = plt.subplots(1, len(arms), figsize=(3.2 * len(arms), 3.0), squeeze=False)
     for axis, arm in zip(axes[0], arms):
         members = sorted([r for r in tuned if arm_of(r) == arm], key=config_of)
         for index, run in enumerate(members):
@@ -154,7 +153,8 @@ def tuning_distance_figure() -> Path:
         axis.set_xlabel("fraction of tuning budget")
         axis.legend(fontsize=7, ncol=2)
     axes[0][0].set_ylabel("‖θ − θ_teacher‖₂")
-    figure.suptitle("Distance to the teacher's weights, tuning runs", x=0.01, ha="left")
+    figure.suptitle("Distance to the teacher's weights, tuning runs (y-axes differ per arm)",
+                    x=0.01, ha="left")
     figure.tight_layout()
     path = FIGURES / "tuning_teacher_distance.png"
     figure.savefig(path, dpi=150)
@@ -170,8 +170,7 @@ def sweep_figures() -> list[Path]:
     lambdas = sorted({r["final"]["lam"] for r in sweep})
     # 1. distance to teacher: one panel per arm, one line per λ > 0.
     arms = [arm for arm in ARMS if any(arm_of(r) == arm for r in sweep)]
-    figure, axes = plt.subplots(1, len(arms), figsize=(3.2 * len(arms), 3.0), sharey=True,
-                                squeeze=False)
+    figure, axes = plt.subplots(1, len(arms), figsize=(3.2 * len(arms), 3.0), squeeze=False)
     for axis, arm in zip(axes[0], arms):
         for run in sorted([r for r in sweep if arm_of(r) == arm and r["final"]["lam"] > 0],
                           key=lambda r: r["final"]["lam"]):
@@ -184,7 +183,8 @@ def sweep_figures() -> list[Path]:
         axis.set_xlabel("fraction of B_full")
     axes[0][0].set_ylabel("‖θ − θ_teacher‖₂")
     axes[0][-1].legend(fontsize=7)
-    figure.suptitle("Distance to the teacher's weights, λ sweep (seed 0)", x=0.01, ha="left")
+    figure.suptitle("Distance to the teacher's weights, λ sweep (seed 0; y-axes differ per arm)",
+                    x=0.01, ha="left")
     figure.tight_layout()
     paths.append(FIGURES / "sweep_teacher_distance.png")
     figure.savefig(paths[-1], dpi=150)

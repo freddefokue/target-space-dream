@@ -46,8 +46,8 @@ def main() -> None:
             used = sum(entry[3] for entry in running)
             free = free_gpu_gb()
             fitting = [position for position, (_, spec) in enumerate(pending)
-                       if not running or (used + spec["mem_gb"] <= arguments.mem_gb
-                                          and free >= spec["mem_gb"] + 1.0)]
+                       if used + spec["mem_gb"] <= arguments.mem_gb
+                       and free >= spec["mem_gb"] + 1.0]
             if not fitting:  # the first pending job that fits starts; order is kept otherwise
                 break
             index, spec = pending.pop(fitting[0])
