@@ -1,0 +1,11 @@
+{
+  "arm": "A3",
+  "gn": {
+    "batch": 2048,
+    "cg_iterations": 10,
+    "curvature_batch": 512,
+    "damping": 1.0,
+    "warm_start": 0.9
+  },
+  "name": "A3-4"
+}

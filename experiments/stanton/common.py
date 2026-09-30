@@ -70,9 +70,24 @@ class ComputeCounter:
     def cost(self, kind: str, batch: int) -> float:
         return self.ratio(kind, batch) * batch
 
-    def charge(self, kind: str, batch: int) -> None:
-        primary = self.cost(kind, batch)
-        secondary = 2.0 * batch if kind == "jvp" else primary
+    def secondary_cost(self, kind: str, batch: int) -> float:
+        """Cost with every JVP charged as 2 forward passes.
+
+        A GGN product is one JVP plus one backward pass, whichever method computes the JVP.
+        """
+
+        if kind == "jvp":
+            return 2.0 * batch
+        if kind.startswith("ggn_product_"):
+            return (2.0 + self.ratio("vjp", batch)) * batch
+        return self.cost(kind, batch)
+
+    def charge(self, kind: str, batch: int, times: int = 1) -> None:
+        if times == 0:
+            return
+        primary = self.cost(kind, batch) * times
+        secondary = self.secondary_cost(kind, batch) * times
+        batch *= times
         self.images[kind] = self.images.get(kind, 0) + batch
         self.fe += primary
         self.fe_secondary += secondary

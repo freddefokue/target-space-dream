@@ -35,6 +35,43 @@
       "jvp": 56.371280670166016
     }
   },
+  "ggn_git": "4793834-dirty",
+  "ggn_grid_cost_fe": {
+    "double_vjp": 1098159.8879814974,
+    "jvp_vjp": 296305.1788678017,
+    "linearize": 236609.78749289134
+  },
+  "ggn_measured_at": "2026-09-30 15:37:34",
+  "ggn_method": "linearize",
+  "ggn_relative_disagreement_vs_jvp_vjp": {
+    "double_vjp@1024": 1.2186777098577295e-07,
+    "double_vjp@128": 1.1683066958312338e-07,
+    "double_vjp@512": 1.2704042262612347e-07,
+    "double_vjp@64": 1.1528926080472957e-07,
+    "jvp_vjp@1024": 0.0,
+    "jvp_vjp@128": 0.0,
+    "jvp_vjp@512": 0.0,
+    "jvp_vjp@64": 0.0,
+    "linearize@1024": 9.727815353244296e-08,
+    "linearize@128": 8.360154168940426e-08,
+    "linearize@512": 1.0206974110360534e-07,
+    "linearize@64": 8.453914546180386e-08
+  },
+  "ggn_selection_rule": "lowest total FE of setup + (K + 1) products over the A3 grid's (|C|, K) pairs; the +1 is the warm-start product",
+  "ggn_timing_modes": {
+    "double_vjp@1024": "setup cuda_graph, product cuda_graph",
+    "double_vjp@128": "setup cuda_graph, product cuda_graph",
+    "double_vjp@512": "setup cuda_graph, product cuda_graph",
+    "double_vjp@64": "setup cuda_graph, product cuda_graph",
+    "jvp_vjp@1024": "setup cuda_graph, product cuda_graph",
+    "jvp_vjp@128": "setup cuda_graph, product cuda_graph",
+    "jvp_vjp@512": "setup cuda_graph, product cuda_graph",
+    "jvp_vjp@64": "setup cuda_graph, product eager",
+    "linearize@1024": "setup cuda_graph, product cuda_graph",
+    "linearize@128": "setup cuda_graph, product cuda_graph",
+    "linearize@512": "setup cuda_graph, product cuda_graph",
+    "linearize@64": "setup cuda_graph, product cuda_graph"
+  },
   "git": "db4c7af-dirty",
   "gpu": "NVIDIA A40",
   "measured_at": "2026-09-30 14:48:40",
@@ -78,7 +115,8 @@
       "128": 1.0,
       "2048": 1.0,
       "256": 1.0,
-      "512": 1.0
+      "512": 1.0,
+      "64": 1.0
     },
     "fwd_bwd": {
       "1024": 3.2043808568988217,
@@ -93,6 +131,42 @@
       "2048": 0.9999375631924665,
       "256": 0.999236303882657,
       "512": 1.0001227421348255
+    },
+    "ggn_product_double_vjp": {
+      "1024": 42.09262859482499,
+      "128": 16.272198715700128,
+      "512": 41.064444115736585,
+      "64": 11.466969689811627
+    },
+    "ggn_product_jvp_vjp": {
+      "1024": 9.684542611480499,
+      "128": 10.05883936994441,
+      "512": 9.631137245540597,
+      "64": 26.347713153433403
+    },
+    "ggn_product_linearize": {
+      "1024": 7.439527149336734,
+      "128": 7.63529743512852,
+      "512": 7.386362451658348,
+      "64": 7.64680072245854
+    },
+    "ggn_setup_double_vjp": {
+      "1024": 3.923810212535161,
+      "128": 4.366809552616576,
+      "512": 3.9527095566951416,
+      "64": 4.724918596220903
+    },
+    "ggn_setup_jvp_vjp": {
+      "1024": 0.999650299557671,
+      "128": 0.9984198169042193,
+      "512": 0.9989726802045331,
+      "64": 1.0023016327999084
+    },
+    "ggn_setup_linearize": {
+      "1024": 8.68858359774574,
+      "128": 8.651115310312063,
+      "512": 8.614507546754334,
+      "64": 8.419291242007258
     },
     "jvp": {
       "1024": 6.713123833487043,
