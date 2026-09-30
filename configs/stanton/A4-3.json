@@ -1,0 +1,16 @@
+{
+  "arm": "A4",
+  "gn": {
+    "batch": 512,
+    "cg_iterations": 10,
+    "curvature_batch": 512,
+    "damping": 1.0,
+    "warm_start": 0.9
+  },
+  "inherits": "A3-6",
+  "name": "A4-3",
+  "schedule": {
+    "kind": "fixed",
+    "phi": 0.75
+  }
+}
