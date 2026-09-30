@@ -238,6 +238,10 @@ still beat A1-7 at 4×, and do the two converge with more training? Note that a 
 `B_full` is not a 1× run (its lr and temperature schedules are stretched), so the 1× comparison
 uses the 1× sweep runs' endpoints.
 
+Patience check at λ = 0 (Amendment 7; not part of the decision rule): as the Amendment 6 check,
+at λ = 0, seed 0, for A1-7, A2-3 and A5-6 at `4·B_full` (validation and 50k clean-train metrics
+against compute), next to the 1× λ-sweep runs at λ = 0.
+
 Anchor diagnostic (Amendment 4; not part of the decision rule): at λ = 0.25, seed 0, `B_full`,
 A1's selected config plus `(μ(s)/2)·‖θ − θ_init‖²` with `μ(s) = μ·max(0, 1 − s/0.3)` (linear decay
 to 0 over the first 30% of the budget), μ ∈ {0.01, 0.1}. It tests whether merely staying close to
@@ -357,4 +361,12 @@ Note: the 50k train evaluation of the selected A1, A2, A5 and A6 tuning configs 
 Patience check: A1-7 and A5-6 at λ = 0.25, seed 0, `4·B_full`, validation and 50k clean-train
 metrics against compute (§7). Diagnostic only. Written before either run existed and before I had
 looked at the 1× λ-sweep results of A1-7 or A5-6. Cost estimate ≈2.4 GPU-h.
+
+### Amendment 7 (2026-09-30, before any λ = 0 patience-check run; requested by Fred)
+
+Patience check at λ = 0 for A1-7, A2-3 and A5-6 at `4·B_full` (§7). Fred's message called this
+"Amendment 6"; since the λ = 0.25 check of Amendment 6 was already recorded and running, it is
+recorded as an additional amendment. Written before these runs existed and before I had looked at
+any λ = 0 result of the λ sweep. Cost ≈3.5 GPU-h; projected total with it ≈32 GPU-h (≈36 with a
+15% margin) of the 40-hour cap, so all three runs are made (Fred's fallback: A1-7 and A5-6 only).
 
