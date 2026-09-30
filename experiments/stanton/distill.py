@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import fcntl
 import json
 import math
 import time
@@ -56,7 +57,21 @@ HANDOFF_PEAK = {"primary": 0.1, "secondary": 1.0}
 MOVING = {"A2", "A4"}
 EVALS = 50            # evaluations per run (every 2% of the budget)
 CHECKPOINT_EVERY = 2  # checkpoint at every second evaluation (every 4%)
+LOCKS = Path("/tmp/stanton_run_locks")
 MONITOR_CHECKS = 200  # adaptive-t checks per run (every 0.5% of the budget)
+
+
+def acquire_run_lock(run_id: str):
+    """Exclusive per-run lock, so two queues never run the same run directory at once."""
+
+    LOCKS.mkdir(parents=True, exist_ok=True)
+    handle = open(LOCKS / f"{run_id}.lock", "w")
+    try:
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        handle.close()
+        return None
+    return handle
 
 
 def initial_student(teacher: torch.nn.Module, lam: float, seed: int) -> ResNet20GN1:
@@ -404,6 +419,10 @@ def main() -> None:
     ckpt_path, metrics_path = run_dir / "ckpt.pt", run_dir / "metrics.jsonl"
     if (run_dir / "final.json").exists():
         print(f"{run_id} already finished", flush=True)
+        return
+    lock = acquire_run_lock(run_id)
+    if lock is None:
+        print(f"{run_id} is already running in another process", flush=True)
         return
 
     data = CIFAR100GPU()
