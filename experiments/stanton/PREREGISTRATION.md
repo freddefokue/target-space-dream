@@ -211,3 +211,12 @@ reported alongside but do not enter the rule.
 5. GGN-product implementation chosen by measured cost among jvp+vjp, linearize and
    reverse-over-reverse before tuning; secondary compute count with JVP = 2 FE.
 6. Commits at least hourly, each followed by the backup bundle (process, not analysis).
+
+### Amendment 2 (2026-09-30, before any distillation run; decided by Fred)
+
+FE ratios are measured as CUDA-graph replay times (GPU work only), not eager timings. Reason: at
+batch 128 an eager forward+backward measured 5.2–5.5 FE because it is CPU launch-bound, whereas its
+GPU work is 3.2 FE (as at batch ≥ 512). Eager ratios would raise `B_full` from ≈4.2·10⁷ to
+≈6.2·10⁷ FE and give the large-batch Gauss–Newton arms ≈1.5× more real GPU compute than the
+batch-128 first-order arms. Eager timings stay in `compute_calibration.json` for reference, and
+wall-clock time is reported per run.

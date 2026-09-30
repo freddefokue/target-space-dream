@@ -1,0 +1,13 @@
+{
+  "arm": "A1",
+  "batch": 128,
+  "lr": 0.05,
+  "lr_min": 1e-06,
+  "momentum": 0.9,
+  "name": "A1-4",
+  "nesterov": true,
+  "note": "gnosis tau=4 loss: tau^2 KL(softmax(f_T/tau)||softmax(f_S/tau))",
+  "optimizer": "sgd",
+  "temperature": 4.0,
+  "weight_decay": 0.0001
+}

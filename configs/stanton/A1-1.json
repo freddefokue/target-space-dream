@@ -1,0 +1,13 @@
+{
+  "arm": "A1",
+  "batch": 128,
+  "lr": 0.05,
+  "lr_min": 1e-06,
+  "momentum": 0.9,
+  "name": "A1-1",
+  "nesterov": true,
+  "note": "Stanton/gnosis optimizer recipe",
+  "optimizer": "sgd",
+  "temperature": 1.0,
+  "weight_decay": 0.0001
+}
