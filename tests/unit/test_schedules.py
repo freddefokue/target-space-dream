@@ -68,3 +68,24 @@ def test_adaptive_t_deadline_ramp() -> None:
     assert control.check(0.0, 0.8) is None
     deadline = [event for event in control.events if event["reason"] == "deadline"]
     assert len(deadline) == 1 and deadline[0]["forced"]
+
+
+def test_snapshot_controller_moves_in_whole_snapshots() -> None:
+    from dream.schedules import snapshot_controller, snapshot_index
+
+    control = snapshot_controller(threshold=0.1, intervals=40)
+    assert snapshot_index(control.t, 40) == 0
+    control.check(0.0, 0.0)
+    assert snapshot_index(control.t, 40) == 1
+    control.check(0.0, 0.01)                     # two advances: step doubles to 2 snapshots
+    control.check(0.0, 0.02)
+    assert snapshot_index(control.t, 40) == 4
+    for _ in range(4):                           # 4 -> 6 -> 10 -> 14 -> 19; step 2 -> 4 -> 5 (cap)
+        control.check(0.0, 0.03)
+    assert snapshot_index(control.t, 40) == 19
+    assert control.step == pytest.approx(5 / 40)
+    for fraction in (0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17, 0.18):
+        control.check(9.0, fraction)             # failures halve the step, never below 1
+    assert control.step == pytest.approx(1 / 40)
+    assert snapshot_controller(0.1, 20).step_cap == pytest.approx(3 / 20)
+    assert snapshot_index(1.0, 40) == 40 and snapshot_index(3 * (1 / 40), 40) == 3

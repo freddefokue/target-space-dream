@@ -7,12 +7,17 @@ Arms (PREREGISTRATION.md §6):
 - A2 first-order, moving target ``y_t = (1 - t) f_init + t f_T`` (fixed or adaptive t);
 - A3 damped GGN-CG with Levenberg-Marquardt damping, teacher target;
 - A4 soft Dream: A3's step on the moving target;
-- A5 first-order, tempered teacher (geometric T schedule) or Annealing-KD (MSE on Phi(T) f_T).
+- A5 first-order, tempered teacher (geometric T schedule) or Annealing-KD (MSE on Phi(T) f_T);
+- A6 first-order, teacher-trajectory continuation: the teacher's training snapshots as targets,
+  advanced by the adaptive rule of A2.
+
+A1 configs may add an anchor ``(mu(s)/2) ||theta - theta_init||^2`` (anchor diagnostic).
 
 Every run writes ``config.json``, ``metrics.jsonl`` (about every 2% of the budget), ``ckpt.pt``
 (every 4%), ``final_model.pt`` and ``final.json`` to ``/workspace/runs/<run_id>/`` and resumes from
 its last checkpoint when relaunched with the same arguments. ``--init-from`` starts from another
-run's final weights (hand-off diagnostic).
+run's final weights; with ``--handoff primary|secondary`` it runs the hand-off diagnostic
+(PREREGISTRATION.md §7).
 """
 
 from __future__ import annotations
@@ -42,10 +47,12 @@ from dream.parameters import ParameterSpec
 from dream.schedules import (AdaptiveT, annealing_kd_factor, annealing_kd_temperature, fixed_t,
                              geometric_temperature, warmup_cosine)
 from evaluate import evaluate
-from teacher import TEACHER_LOGITS, TEACHER_STATE, load_teacher
+from dream.schedules import snapshot_controller, snapshot_index
+from teacher import SNAPSHOTS, TEACHER_LOGITS, TEACHER_STATE, load_teacher
 
-ARMS = {"A1", "A2", "A3", "A4", "A5"}
-FIRST_ORDER = {"A1", "A2", "A5"}
+ARMS = {"A1", "A2", "A3", "A4", "A5", "A6"}
+FIRST_ORDER = {"A1", "A2", "A5", "A6"}
+HANDOFF_PEAK = {"primary": 0.1, "secondary": 1.0}
 MOVING = {"A2", "A4"}
 EVALS = 50            # evaluations per run (every 2% of the budget)
 CHECKPOINT_EVERY = 2  # checkpoint at every second evaluation (every 4%)
@@ -74,18 +81,23 @@ def make_optimizer(config: dict, parameters, peak_lr: float) -> torch.optim.Opti
     raise ValueError(f"unknown optimizer {config['optimizer']}")
 
 
-def run_id_for(config: dict, lam: float, seed: int, budget: str, init_from: Path | None) -> str:
+def run_id_for(config: dict, lam: float, seed: int, budget: str, init_from: Path | None,
+               handoff: str | None = None) -> str:
     run_id = f"{config['name']}_lam{lam:g}_s{seed}_{budget}"
+    if handoff:
+        run_id += f"_ho-{handoff}"
     return run_id + (f"_from-{init_from.name}" if init_from else "")
 
 
 class Schedule:
     """t (A2/A4) or temperature (A5) as a function of the budget fraction."""
 
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: dict, intervals: int | None = None) -> None:
         self.config = config.get("schedule")
-        self.adaptive = (AdaptiveT(threshold=self.config["threshold"])
-                         if self.config and self.config["kind"] == "adaptive" else None)
+        self.adaptive = None
+        if self.config and self.config["kind"] == "adaptive":
+            self.adaptive = (snapshot_controller(self.config["threshold"], intervals)
+                             if intervals else AdaptiveT(threshold=self.config["threshold"]))
 
     def t(self, s: float) -> float:
         if self.adaptive is not None:
@@ -113,10 +125,17 @@ class Distiller:
         self.config, self.arm = config, config["arm"]
         self.lam = arguments.lam
         self.data, self.teacher, self.student, self.counter = data, teacher, student, counter
-        self.schedule = Schedule(config)
         self.init_model = None
         if self.arm in MOVING:
             self.init_model = copy.deepcopy(student).eval().requires_grad_(False)
+        self.snapshots: list[Path] = []
+        if self.arm == "A6":
+            spacing = int(config["snapshots"]["spacing"])
+            self.snapshots = [SNAPSHOTS / f"epoch_{epoch:03d}.pt" for epoch in range(0, 201, spacing)]
+            self.snapshot_model = ResNet20GN1().cuda().eval().requires_grad_(False)
+            self.snapshot_current = -1
+            self.snapshot_monitor: dict[int, torch.Tensor] = {}
+        self.schedule = Schedule(config, len(self.snapshots) - 1 if self.snapshots else None)
         self.stats: dict[str, float] = {}
 
     def _stat(self, key: str, value: float) -> None:
@@ -128,10 +147,25 @@ class Distiller:
         self.stats = {}
         return averaged
 
+    def _snapshot(self, t: float) -> int:
+        index = snapshot_index(t, len(self.snapshots) - 1)
+        if index != self.snapshot_current:
+            self.snapshot_model.load_state_dict(
+                torch.load(self.snapshots[index], map_location="cuda", weights_only=True))
+            self.snapshot_current = index
+        return index
+
     def target(self, images: torch.Tensor, s: float) -> tuple[torch.Tensor, dict]:
         """Charged target logits for a training batch and the schedule values used."""
 
         batch = images.shape[0]
+        if self.arm == "A6":
+            t = self.schedule.t(s)
+            index = self._snapshot(t)
+            with torch.no_grad():
+                logits = self.snapshot_model(images)
+            self.counter.charge("fwd", batch)
+            return logits, {"t": t, "snapshot_epoch": int(self.snapshots[index].stem[-3:])}
         with torch.no_grad():
             teacher_logits = self.teacher(images)
         self.counter.charge("fwd", batch)
@@ -160,7 +194,7 @@ class Distiller:
     # Adaptive t: monitor checks -------------------------------------------------------------
 
     def prepare_monitor(self, teacher_monitor: torch.Tensor) -> None:
-        if self.schedule.adaptive is None:
+        if self.schedule.adaptive is None or self.arm == "A6":
             return
         self.monitor_teacher = teacher_monitor
         with torch.no_grad():
@@ -170,7 +204,7 @@ class Distiller:
     def charge_monitor_setup(self) -> None:
         """Teacher and f_init logits on the fixed monitor set are charged once per run."""
 
-        if self.schedule.adaptive is not None:
+        if self.schedule.adaptive is not None and self.arm != "A6":
             self.counter.charge("fwd", len(self.data.monitor), times=2)
 
     def monitor_check(self, s: float) -> dict | None:
@@ -185,8 +219,17 @@ class Distiller:
                 [self.student(images) for images, _ in self.data.monitor.batches(1000)])
         self.student.train(was_training)
         self.counter.charge("fwd", len(self.data.monitor))
-        kl = float(softmax_kl(torch.lerp(self.monitor_initial, self.monitor_teacher, t),
-                              student_logits))
+        if self.arm == "A6":
+            index = self._snapshot(t)
+            if index not in self.snapshot_monitor:  # charged once per snapshot
+                with torch.no_grad():
+                    self.snapshot_monitor[index] = torch.cat(
+                        [self.snapshot_model(images) for images, _ in self.data.monitor.batches(1000)])
+                self.counter.charge("fwd", len(self.data.monitor))
+            target = self.snapshot_monitor[index]
+        else:
+            target = torch.lerp(self.monitor_initial, self.monitor_teacher, t)
+        kl = float(softmax_kl(target, student_logits))
         return control.check(kl, s) or {"reason": None, "kl": kl, "t": t}
 
 
@@ -196,8 +239,14 @@ class FirstOrder(Distiller):
         self.lr_min = float(config["lr_min"])
         self.peak_lr = max(config["lr"] * (1.0 - arguments.lam), self.lr_min)  # gnosis scaling
         self.warmup = float(config.get("warmup", 0.0))
+        if arguments.handoff:  # PREREGISTRATION.md §7, Amendment 4
+            self.peak_lr *= HANDOFF_PEAK[arguments.handoff]
+            self.warmup, self.lr_min = 0.1, 0.0
         self.optimizer = make_optimizer(config, student.parameters(), self.peak_lr)
         self.batch = config["batch"]
+        self.anchor = config.get("anchor")
+        if self.anchor:
+            self.anchor_point = [p.detach().clone() for p in student.parameters()]
 
     def step_cost(self, batch: int) -> float:
         passes = 2 if self.arm in MOVING else 1
@@ -209,6 +258,13 @@ class FirstOrder(Distiller):
             group["lr"] = lr
         target, values = self.target(images, s)
         loss = self.loss(target, self.student(images))
+        if self.anchor:
+            mu = self.anchor["mu"] * max(0.0, 1.0 - s / self.anchor["until"])
+            if mu > 0.0:
+                penalty = sum(((p - p0) ** 2).sum()
+                              for p, p0 in zip(self.student.parameters(), self.anchor_point))
+                loss = loss + 0.5 * mu * penalty
+                values["anchor_mu"] = mu
         self.optimizer.zero_grad(set_to_none=True)
         loss.backward()
         self.counter.charge("fwd_bwd", images.shape[0])
@@ -327,6 +383,8 @@ def main() -> None:
     parser.add_argument("--budget", default="tune", help="full, tune, or a fraction of B_full")
     parser.add_argument("--init-from", type=Path, default=None,
                         help="run directory whose final_model.pt is the starting point")
+    parser.add_argument("--handoff", choices=sorted(HANDOFF_PEAK), default=None,
+                        help="hand-off lr variant (requires --init-from and an A1 config)")
     parser.add_argument("--concurrency", type=int, default=1)
     parser.add_argument("--runs", type=Path, default=RUNS)
     arguments = parser.parse_args()
@@ -335,10 +393,12 @@ def main() -> None:
     config = json.loads(arguments.config.read_text())
     if config["arm"] not in ARMS:
         raise ValueError(f"unknown arm {config['arm']}")
+    if arguments.handoff and (arguments.init_from is None or config["arm"] != "A1"):
+        raise ValueError("--handoff needs --init-from and an A1 config")
     calibration = load_calibration()
     budget = budget_fe(arguments.budget, calibration)
     run_id = run_id_for(config, arguments.lam, arguments.seed, arguments.budget,
-                        arguments.init_from)
+                        arguments.init_from, arguments.handoff)
     run_dir = arguments.runs / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
     ckpt_path, metrics_path = run_dir / "ckpt.pt", run_dir / "metrics.jsonl"
@@ -369,6 +429,7 @@ def main() -> None:
               "peak_lr": getattr(arm, "peak_lr", None),
               "ggn_method": getattr(arm, "method", None),
               "init_from": str(arguments.init_from) if arguments.init_from else None,
+              "handoff": arguments.handoff,
               "student_random_seed": 1000 + arguments.seed, "data_seed": arguments.seed,
               "teacher_state": str(TEACHER_STATE), "splits": split_digest(), "git": git_commit(),
               "calibration_measured_at": calibration["measured_at"],

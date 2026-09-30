@@ -170,26 +170,55 @@ labels with cross-entropy, ours stays label-free on the Φ = 1 MSE loss (as Fred
 study never uses labels); we do not select the best checkpoint on validation (§4); the optimizer is
 A1's best (fairness protocol), not their SGD lr 0.1, wd 1e-4 with the TAKD schedule.
 
+### A6: teacher-trajectory continuation (Amendment 4)
+
+Targets are the teacher's own training snapshots in order, from epoch 0 to epoch 200 (= the final
+teacher), with spacing 5 or 10 epochs (n = 40 or 20 intervals). Loss
+`KL(softmax(f_snapshot) ‖ softmax(f_S))`, A1's selected optimizer (as A2, including the (1−λ) lr
+scaling). The snapshot index is advanced by the adaptive rule of A2 (threshold, relative-progress
+rule, deadline ramp, logging) with t = k/n: initial step 1 snapshot, doubling after two
+consecutive advances up to ⌈n/8⌉ snapshots, halving after three failed checks down to 1 snapshot.
+Under the deadline ramp the target is snapshot ⌊t·n⌋ of the linearly ramped t. Each training step
+charges one snapshot forward per image (in place of the teacher forward); the monitor logits of
+each snapshot are charged once (2,000 forwards) when that snapshot becomes the target.
+
+| # | spacing | τ_KL |
+|---|---:|---:|
+| A6-1..3 | 5 epochs | 0.05, 0.15, 0.4 |
+| A6-4..6 | 10 epochs | 0.05, 0.15, 0.4 |
+
+A6 is tuned at λ = 0.25 like the other arms and included in the λ sweep, the final seeds and the
+hand-off.
+
 ## 7. Run plan and seeds
 
 1. Phase 1 sanity: A1-1 at `B_full/4`, λ ∈ {0.5, 0.25}, seed 0. Gate: validation agreement at
    λ = 0.5 at least 5 pp above λ = 0.25; otherwise stop and report. (Amendment 1: was 0.4.)
 2. Tuning: GGN-product variant chosen first (§5), then all grids above, λ = 0.25, seed 0.
-3. λ sweep: each arm's selected config at `B_full`, seed 0, λ ∈ {0, 0.1, 0.25, 0.4, 0.5}.
+3. λ sweep (arms A1–A6): each arm's selected config at `B_full`, seed 0, λ ∈ {0, 0.1, 0.25, 0.4, 0.5}.
    Positive control: A1 at λ = 0.5 must reach train-subset agreement ≥ 90%; otherwise stop and
    report. (Amendment 1: λ = 0.5 added and used as the control; 0.4 kept in the sweep.)
-4. Finals: seeds 1 and 2, λ ∈ {0, 0.25}, every arm.
-5. Test evaluation of the 3 seeds × 2 λ × 5 arms final models, once.
+4. Finals: seeds 1 and 2, λ ∈ {0, 0.25}, every arm (A1–A6).
+5. Test evaluation of the 3 seeds × 2 λ × 6 arms final models, once.
 
-Hand-off diagnostic (Amendment 3; not part of the decision rule): after the λ sweep, the seed-0
-endpoints of A2 and A4 at λ ∈ {0, 0.25} are continued with A1's selected configuration for
-`B_full/4` (fresh optimizer state, peak lr `lr·(1−λ)` with the run's original λ, the A1 schedule
-over `B_full/4`, teacher target at τ = 1). As the control, A1's own endpoints at the same λ are
-continued identically. Reported: validation agreement, KL and train-subset agreement after the
-hand-off, next to the values before it.
+Hand-off diagnostic (Amendments 3 and 4; not part of the decision rule): after the λ sweep, the
+seed-0 endpoints of A2, A4 and A6 at λ ∈ {0, 0.25} are continued with A1's selected configuration
+(its optimizer, weight decay and loss) for `B_full/4`, with fresh optimizer state and teacher
+target. Two learning-rate variants, with `peak = lr·(1−λ)` of A1's selected config and the run's
+original λ:
 
-Seeds are fixed as above. No run is discarded; failed, diverged or crashed-then-resumed runs
-are reported as such.
+- **primary:** linear warmup over the first 10% of the hand-off budget to `0.1·peak`, then cosine
+  to 0;
+- **secondary:** linear warmup over the first 10% to the full `peak`, then cosine to 0.
+
+As the control, A1's own endpoints at the same λ get both treatments. Reported: validation
+agreement, KL, train-subset agreement and `‖θ − θ_T‖₂` after the hand-off, next to the values
+before it.
+
+Anchor diagnostic (Amendment 4; not part of the decision rule): at λ = 0.25, seed 0, `B_full`,
+A1's selected config plus `(μ(s)/2)·‖θ − θ_init‖²` with `μ(s) = μ·max(0, 1 − s/0.3)` (linear decay
+to 0 over the first 30% of the budget), μ ∈ {0.01, 0.1}. It tests whether merely staying close to
+the initialization early reproduces a continuation effect.
 
 ## 8. Decision rule
 
@@ -201,15 +230,18 @@ standard deviation (n − 1 = 2) of test agreement over the 3 seeds. "X beats Y 
 means `mean_X − mean_Y ≥ 1.0 pp` **and** `mean_X − mean_Y > 2·sd_pool(X, Y)`. "X and Y are within
 two standard deviations" means `|mean_X − mean_Y| ≤ 2·sd_pool(X, Y)`.
 
-- **GO:** A4 beats each of A1, A2, A3 and A5 by the GO margin, and has lower mean test KL than
-  each of them.
-- **Second order is the lever:** A3 and A4 are within two SD, and both beat each of A1, A2 and A5
+- **GO:** A4 beats each of A1, A2, A3, A5 and A6 by the GO margin, and has lower mean test KL
+  than each of them.
+- **Second order is the lever:** A3 and A4 are within two SD, and both beat each of A1, A2, A5
+  and A6 by the GO margin.
+- **The path is the lever:** A2 and A4 are within two SD, and both beat each of A1, A3, A5 and A6
   by the GO margin.
-- **The path is the lever:** A2 and A4 are within two SD, and both beat each of A1, A3 and A5 by
-  the GO margin.
 - **Temperature suffices:** A5 is within two SD of A2 or of A4 (reported whenever A2 or A4 beats
   A1 by the GO margin).
+- **Teacher trajectory suffices:** A6 is within two SD of A4, and both beat A1 by the GO margin.
 - **NO-GO:** no arm beats A1 by the GO margin.
+
+(A6 and the "teacher trajectory suffices" outcome were added by Amendment 4.)
 
 All outcomes that apply are reported for both λ values; none is suppressed. A GO at only one of
 the two λ values is reported as such, together with the other λ's outcome (two comparisons are
@@ -265,4 +297,18 @@ reverse-over-reverse product ≈41 FE at |C| ≥ 512). All three agree to ≈1e-
 Recorded in `compute_calibration.json` (`ggn_method`, `ggn_grid_cost_fe`). `linearize` re-traces
 the model on the CPU at every step (≈1.5 s), which is not GPU work and is absorbed by running
 Gauss–Newton runs 8 at a time.
+
+### Amendment 4 (2026-09-30, before any tuning run; requested by Fred)
+
+1. Hand-off: primary variant warms up over 10% of the hand-off budget to 10% of A1's peak lr, then
+   cosine to 0; secondary variant warms up to the full peak. A1's control gets both. Sources now
+   include A6. (Replaces the Amendment 3 hand-off schedule, which restarted at the full peak lr
+   and knocked a smoke-test student off its starting point.)
+2. Arm A6, teacher-trajectory continuation, 6 configurations; in the sweep, finals and hand-off.
+3. Decision rule: A6 is a competitor (Fred's decision): it joins the comparison sets of GO,
+   "second order" and "path", and a "teacher trajectory suffices" outcome is added.
+4. Anchor diagnostic at λ = 0.25 with μ ∈ {0.01, 0.1} (my choice of values: the anchor gradient
+   μ·‖θ − θ_init‖ is then ≈0.1 and ≈1 at the displacement of 10 that A1 reaches early at λ = 0.25,
+   i.e. a moderate and a strong pull relative to the distillation gradient).
+5. Every Phase 3 report shows the distance-to-teacher curves of all λ > 0 runs of every arm.
 

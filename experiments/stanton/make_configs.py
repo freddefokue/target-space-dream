@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Write the preregistered tuning configurations to ``configs/stanton/``.
 
-A1 and A3 grids are fixed. A2 and A5 inherit the optimizer settings of the selected A1 config,
+A1 and A3 grids are fixed. A2, A5, A6 and the anchor diagnostic inherit the settings of the
+selected A1 config,
 A4 inherits the numerics of the selected A3 config (PREREGISTRATION.md §6), so they are written
 only when ``--a1`` / ``--a3`` name the selected configs (or a ``--prefix`` for smoke tests).
 """
@@ -64,6 +65,16 @@ def main() -> None:
         for index, schedule in enumerate(TEMPERATURES, start=1):
             write(f"{p}A5-{index}", {"arm": "A5", "inherits": arguments.a1, **optimizer,
                                      "schedule": schedule}, arguments.out)
+        for index, (spacing, threshold) in enumerate(
+                [(5, 0.05), (5, 0.15), (5, 0.4), (10, 0.05), (10, 0.15), (10, 0.4)], start=1):
+            write(f"{p}A6-{index}", {"arm": "A6", "inherits": arguments.a1, **optimizer,
+                                     "snapshots": {"spacing": spacing},
+                                     "schedule": {"kind": "adaptive", "threshold": threshold}},
+                  arguments.out)
+        anchored = {k: v for k, v in selected.items() if k != "name"}
+        for mu in (0.01, 0.1):
+            write(f"{p}A1-anchor-mu{mu:g}", {**anchored, "inherits": arguments.a1,
+                                             "anchor": {"mu": mu, "until": 0.3}}, arguments.out)
     if arguments.a3:
         selected = json.loads((CONFIGS / f"{arguments.a3}.json").read_text())
         for index, schedule in enumerate(SCHEDULES, start=1):

@@ -125,3 +125,17 @@ class AdaptiveT:
 
     def load_state_dict(self, state: dict) -> None:
         self.__dict__.update(state)
+
+
+def snapshot_index(t: float, intervals: int) -> int:
+    """Index of the target snapshot for a path position ``t`` in [0, 1] over ``intervals`` steps."""
+
+    return min(intervals, int(math.floor(t * intervals + 1e-6)))
+
+
+def snapshot_controller(threshold: float, intervals: int) -> AdaptiveT:
+    """The A2 adaptive rule in units of one snapshot (PREREGISTRATION.md §6, A6)."""
+
+    unit = 1.0 / intervals
+    return AdaptiveT(threshold=threshold, step=unit, step_cap=math.ceil(intervals / 8) * unit,
+                     step_floor=unit)
