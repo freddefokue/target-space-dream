@@ -6,6 +6,10 @@ It is loaded at the start of every Claude Code session, so re-read it whenever y
 Two values to confirm with Fred in Phase 0: the GPU-hour cap (default **30 GPU-hours**) and
 whether the thesis teacher checkpoint is available at `/workspace/inputs/teacher_state.pt`.
 
+> **Status note (2026-09-30):** decisions and amendments that override this brief (cap now
+> 40 GPU-hours, no thesis teacher, (1−λ) lr scaling, λ = 0.5 control, schedule changes) are in
+> `experiments/stanton/PLAN.md` §6 and `PREREGISTRATION.md` §9. Those files take precedence.
+
 ---
 
 ## 0. How to work

@@ -30,9 +30,12 @@ order without continuation, and temperature annealing, at equal compute?
   seed 0, float32, TF32 off. Its validation accuracy is reported. Sanity gate: validation accuracy
   ≥ 55%; otherwise stop and report.
 - Student: `θ_init(λ, s) = λ·θ_T + (1−λ)·θ_R(1000 + s)`, `θ_R` the default PyTorch initialization of
-  `ResNet20GN1` under `torch.manual_seed(1000 + s)`. λ ∈ {0.0, 0.1, 0.25, 0.4}. The data and
+  `ResNet20GN1` under `torch.manual_seed(1000 + s)`. λ ∈ {0.0, 0.1, 0.25, 0.4, 0.5}. The data and
   augmentation stream of a run uses seed `s`.
-- No learning-rate scaling with λ (deviation from gnosis, see PLAN.md §2).
+- Learning-rate scaling as in gnosis, for the first-order arms (A1, A2, A5) only: the peak
+  learning rate is `max(lr·(1−λ), lr_min)`, with `lr` the configured value below and `lr_min` the
+  cosine floor (1e-6 for SGD, 0 for Adam). The Gauss–Newton arms (A3, A4) have no learning rate.
+  (Amendment 1.)
 
 ## 4. Metrics
 
@@ -56,7 +59,15 @@ Logged about every 2% of each run's budget, and at the end:
 - `B_full` = FE of 200 epochs of A1 on the 50k distillation set (batch 128: student fwd+bwd plus
   teacher forward per image). Every full run gets exactly `B_full`; tuning runs get `B_full/4`.
   A run stops at the first step that would exceed its budget.
-- Hard cap: 30 GPU-hours in total (Fred may change it).
+- Secondary count (reported, not used for budgets or the decision rule): the same tally with every
+  JVP charged as 2 forward passes instead of its measured cost. (Amendment 1.)
+- Before any tuning run, the GGN-vector product is implemented with `torch.func.jvp`+`vjp`,
+  `torch.func.linearize` (one linearization per step, reused across the K CG iterations), and
+  reverse-over-reverse (J v as the VJP of a VJP); the cheapest exact variant on the A40 is used for
+  all Gauss–Newton runs, and the choice and timings are recorded in `compute_calibration.json`.
+  If linearization is shared across CG iterations, its one-off cost is charged once per step.
+  (Amendment 1.)
+- Hard cap: 40 GPU-hours in total (Fred may change it). (Amendment 1.)
 
 ## 6. Arms and tuning grids
 
@@ -66,6 +77,8 @@ Every tuning run is reported.
 
 Common: batch 128 for first-order arms; cosine learning-rate decay over the run's budget to 0
 (Adam: to 0; SGD: to 1e-6 as in gnosis); Nesterov momentum 0.9 for SGD; Adam β = (0.9, 0.999).
+Learning rates in the tables are before the (1−λ) scaling of §3; at the tuning λ = 0.25 they are
+multiplied by 0.75.
 
 ### A1: first-order, direct (teacher, t = 1)
 
@@ -98,8 +111,18 @@ compute mean `KL(q_t ‖ p_θ)` on the monitor set (teacher and f_init logits on
 images are computed once and charged once; each check charges 2,000 student forwards). If it is
 below τ_KL, `t ← min(1, t + Δt)`; after two consecutive advances Δt doubles, up to 1/8. If it is
 above τ_KL for 3 consecutive checks, Δt halves, down to a floor of 1/1024. Initial Δt = 1/64.
-Once t = 1, training continues at t = 1 until the budget ends. If t never reaches 1, the run is
-still evaluated against the teacher (t = 1) and reported as such.
+
+Relative-progress rule (Amendment 1): the first check after each advance records a reference
+`KL_ref` at the new t. A later check at the same t also triggers an advance when its KL is at most
+`KL_ref / 2`, even if it is above τ_KL. Such an advance counts as an advance for the doubling rule.
+
+Deadline (Amendment 1): if t < 1 when 60% of the budget has been consumed, the controller stops and
+t ramps linearly from its current value to 1 by 70% of the budget, so that at least 30% of the
+budget runs at t = 1.
+
+Every advance is logged with its reason (`threshold`, `relative` or `deadline`), the budget
+fraction, t before and after, Δt and the monitor KL. Relative and deadline advances are "forced"
+advances and are summarized per run. Once t = 1, training continues at t = 1 until the budget ends.
 
 ### A3: damped GGN-CG, direct (teacher, t = 1)
 
@@ -135,11 +158,12 @@ A1's best optimizer. `T = T0^(1 − s/φ)` for s ≤ φ, then T = 1.
 
 ## 7. Run plan and seeds
 
-1. Phase 1 sanity: A1-1 at `B_full/4`, λ ∈ {0.4, 0.25}, seed 0. Gate: validation agreement at
-   λ = 0.4 at least 5 pp above λ = 0.25; otherwise stop and report.
-2. Tuning: all grids above, λ = 0.25, seed 0.
-3. λ sweep: each arm's selected config at `B_full`, seed 0, λ ∈ {0, 0.1, 0.25, 0.4}. Positive
-   control: A1 at λ = 0.4 must reach train-subset agreement ≥ 90%; otherwise stop and report.
+1. Phase 1 sanity: A1-1 at `B_full/4`, λ ∈ {0.5, 0.25}, seed 0. Gate: validation agreement at
+   λ = 0.5 at least 5 pp above λ = 0.25; otherwise stop and report. (Amendment 1: was 0.4.)
+2. Tuning: GGN-product variant chosen first (§5), then all grids above, λ = 0.25, seed 0.
+3. λ sweep: each arm's selected config at `B_full`, seed 0, λ ∈ {0, 0.1, 0.25, 0.4, 0.5}.
+   Positive control: A1 at λ = 0.5 must reach train-subset agreement ≥ 90%; otherwise stop and
+   report. (Amendment 1: λ = 0.5 added and used as the control; 0.4 kept in the sweep.)
 4. Finals: seeds 1 and 2, λ ∈ {0, 0.25}, every arm.
 5. Test evaluation of the 3 seeds × 2 λ × 5 arms final models, once.
 
@@ -173,4 +197,17 @@ reported alongside but do not enter the rule.
 
 ## 9. Amendments
 
-None yet.
+### Amendment 1 (2026-09-30, before any training run; requested by Fred)
+
+1. Budget cap 30 → 40 GPU-hours.
+2. gnosis's (1−λ) learning-rate scaling for A1, A2 and A5, because Stanton's λ threshold was
+   measured with it (reverses decision D5 in `PLAN.md`).
+3. λ = 0.5 added to the sweep and used as the positive control (Phase 1 check: 0.5 vs 0.25;
+   train-agreement gate at 0.5). λ = 0.4 stays in the sweep. Reason: 0.4 sits close to Stanton's
+   transition (between 0.25 and 0.375 in their setup, which differs from ours).
+4. Adaptive t schedule: relative-progress advance (KL halved since the last advance), and a
+   deadline ramp to t = 1 between 60% and 70% of the budget; all forced advances logged. Reason:
+   a threshold-only controller can stall below t = 1 and never distil the teacher.
+5. GGN-product implementation chosen by measured cost among jvp+vjp, linearize and
+   reverse-over-reverse before tuning; secondary compute count with JVP = 2 FE.
+6. Commits at least hourly, each followed by the backup bundle (process, not analysis).

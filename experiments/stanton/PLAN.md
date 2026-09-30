@@ -47,8 +47,8 @@ Gauss–Newton arms steps; they will not be made to look cheaper than they are.
 | Teacher | 200 epochs, SGD m0.9, lr 0.1 cosine→0, wd 1e-4, batch 256 | 200 epochs, Nesterov m0.9, lr 0.1 cosine, wd 5e-4, batch 128, seed 0 (brief recipe), trained here | Thesis teacher unavailable. Stanton's §6 teacher: 70.5% test; thesis teacher: 63.74%. |
 | Distillation loss | `τ²·CE(softmax(z_t/τ), softmax(z_s/τ))`; gnosis default τ = 4; §6 text does not state τ | KL at τ = 1 for A1–A4, plus **one A1 config with Stanton's τ = 4 loss**; A5 anneals τ to 1 | Brief §6; τ = 4 added to A1 for fairness (decision D4). Fidelity is always measured at τ = 1. |
 | Student optimizer | SGD Nesterov m0.9, lr 0.05 cosine→1e-6, wd 1e-4, batch 128, 300 epochs | tuned grid containing this recipe (A1 config 1), at 200-epoch-equivalent compute | Brief fixes `B_full` = 200 epochs of A1. |
-| Interpolated init | `λ·θ_t + (1−λ)·θ_r` (gnosis code: `r·θ_r + (1−r)·θ_t`, `r = 1−λ`), **lr scaled by (1−λ)** | Same interpolation; no lr scaling | One configuration per arm tuned at λ = 0.25 (brief §7). Could matter at λ = 0.4; noted. |
-| λ grid | {0, 0.25, 0.375, …}; transition between 0.25 and 0.375 | {0, 0.1, 0.25, 0.4} | Brief §3. 0.4 lies just above Stanton's transition. |
+| Interpolated init | `λ·θ_t + (1−λ)·θ_r` (gnosis code: `r·θ_r + (1−r)·θ_t`, `r = 1−λ`), **lr scaled by (1−λ)** | Same interpolation and the same (1−λ) lr scaling for A1, A2, A5 (Amendment 1) | Stanton's λ threshold was measured with it. |
+| λ grid | {0, 0.25, 0.375, …}; transition between 0.25 and 0.375 | {0, 0.1, 0.25, 0.4, 0.5}; λ = 0.5 is the positive control (Amendment 1) | 0.4 lies only just above Stanton's transition. |
 | Reported §6 numbers | train agreement 78.95% (SGD, 300 epochs), 83.3% (5k epochs) | our A1 train-subset agreement is the comparable number | Sanity reference, not a target. |
 
 Additional design choice: **θ_R uses seed `1000 + s`**, never the teacher's training seed 0, so
@@ -125,15 +125,15 @@ evaluation I budget **0.4 GPU-h per full run** and **0.1 GPU-h per tuning run**.
 | Item | Runs | GPU-h |
 |---|---:|---:|
 | Teacher training | 1 | 0.4 |
-| Phase 1 calibration + A1 sanity (λ 0.4, 0.25 at tuning budget) | 2 | 0.5 |
+| Phase 1 calibration + A1 sanity (λ 0.5, 0.25 at tuning budget) | 2 | 0.5 |
 | Phase 2 smoke tests and debugging | — | 1.5 |
 | Phase 3 tuning: 5 arms × 6 configs at `B_full/4` | 30 | 3.0 |
-| Phase 3 λ sweep: 5 arms × 4 λ, seed 0 | 20 | 8.0 |
+| Phase 3 λ sweep: 5 arms × 5 λ, seed 0 | 25 | 10.0 |
 | Phase 4 finals: 5 arms × 2 λ × seeds 1, 2 | 20 | 8.0 |
 | Test evaluation, plots | — | 0.1 |
-| **Subtotal** | | **21.5** |
-| Contingency (+20%) | | 4.3 |
-| **Projected total** | | **≈ 26 of 30** |
+| **Subtotal** | | **23.5** |
+| Contingency (+20%) | | 4.7 |
+| **Projected total** | | **≈ 28 of 40** |
 
 GPU-hours mean pod wall-clock while the GPU is occupied by this project (concurrent runs share
 the hour). I will re-estimate after the Phase 1 calibration and ask before launching anything
@@ -141,9 +141,15 @@ that would cross the cap.
 
 ## 6. Decisions (Fred, 2026-09-30)
 
-- D1. GPU-hour cap: 30, may be changed later.
+- D1. GPU-hour cap: 30, may be changed later. **Superseded: 40 (Amendment 1).**
 - D2. The thesis teacher cannot be uploaded; train a new one with the brief's recipe.
 - D3. Back the repo up as a git bundle in `/workspace/backup/` after every commit.
 - D4. A1's grid includes one config with Stanton's τ = 4 distillation loss.
-- D5. No (1−λ) lr scaling (left to me).
+- D5. ~~No (1−λ) lr scaling~~ **Reversed by Fred: (1−λ) lr scaling for A1, A2, A5 (Amendment 1).**
 - D6. Adaptive-schedule thresholds fixed now in the preregistration (left to me).
+- D7 (Amendment 1). λ = 0.5 added; it replaces 0.4 as the positive control.
+- D8 (Amendment 1). Adaptive t schedule gains a relative-progress advance (monitor KL halved since
+  the last advance) and a deadline ramp to t = 1 over 60–70% of the budget; forced advances logged.
+- D9 (Amendment 1). Before tuning, pick the cheapest exact GGN product among jvp+vjp, linearize and
+  reverse-over-reverse; also report a secondary compute count with JVP = 2 FE.
+- D10. Commit at least hourly, each commit followed by the backup bundle.
