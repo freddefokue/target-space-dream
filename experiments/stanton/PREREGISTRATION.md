@@ -257,3 +257,12 @@ wall-clock time is reported per run.
 4. `‖θ − θ_T‖₂` logged over training.
 5. Hand-off diagnostic added to §7.
 
+### Record (2026-09-30, Phase 2; not an amendment)
+
+GGN-product method chosen as Amendment 1 requires: **`linearize`** (lowest measured GPU cost over
+the A3 grid: setup ≈8.6 FE, product ≈7.4–7.6 FE per image; `jvp_vjp` product ≈9.7 FE;
+reverse-over-reverse product ≈41 FE at |C| ≥ 512). All three agree to ≈1e-7 relative (float32).
+Recorded in `compute_calibration.json` (`ggn_method`, `ggn_grid_cost_fe`). `linearize` re-traces
+the model on the CPU at every step (≈1.5 s), which is not GPU work and is absorbed by running
+Gauss–Newton runs 8 at a time.
+
