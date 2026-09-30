@@ -228,6 +228,16 @@ at λ = 0.25, seed 0, `B_full/4`, selected by the rule of §6. The selected conf
 λ ∈ {0, 0.25}; its test results are reported next to the decision rule but do not enter it.
 Purpose: separate the annealing effect from the loss effect in A5-6.
 
+Patience check (Amendment 6; not part of the decision rule): at λ = 0.25, seed 0, A1-7 and A5-6
+run at `4·B_full` (validation only). All schedules stretch with the budget (A1-7's warmup over
+the first 10% and cosine decay over the whole run; A5-6's ten temperature stages over the first
+50%). Logged about every 2% of the 4× budget (every 8% of `B_full`): validation agreement and KL,
+and agreement and `KL(p_T ‖ p_S)` on all 50k distillation images without augmentation. Reported
+against compute next to the 1× runs of the λ sweep at λ = 0.25. Questions: does A5-6 at 1×
+still beat A1-7 at 4×, and do the two converge with more training? Note that a 4× run at
+`B_full` is not a 1× run (its lr and temperature schedules are stretched), so the 1× comparison
+uses the 1× sweep runs' endpoints.
+
 Anchor diagnostic (Amendment 4; not part of the decision rule): at λ = 0.25, seed 0, `B_full`,
 A1's selected config plus `(μ(s)/2)·‖θ − θ_init‖²` with `μ(s) = μ·max(0, 1 − s/0.3)` (linear decay
 to 0 over the first 30% of the budget), μ ∈ {0.01, 0.1}. It tests whether merely staying close to
@@ -341,4 +351,10 @@ inspected.
 
 Note: the 50k train evaluation of the selected A1, A2, A5 and A6 tuning configs was run
 (Fred's request) shortly before this amendment was written; no A1-MSE result existed.
+
+### Amendment 6 (2026-09-30, before any patience-check run; requested by Fred)
+
+Patience check: A1-7 and A5-6 at λ = 0.25, seed 0, `4·B_full`, validation and 50k clean-train
+metrics against compute (§7). Diagnostic only. Written before either run existed and before I had
+looked at the 1× λ-sweep results of A1-7 or A5-6. Cost estimate ≈2.4 GPU-h.
 

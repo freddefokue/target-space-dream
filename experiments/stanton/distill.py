@@ -402,6 +402,8 @@ def main() -> None:
                         help="run directory whose final_model.pt is the starting point")
     parser.add_argument("--handoff", choices=sorted(HANDOFF_PEAK), default=None,
                         help="hand-off lr variant (requires --init-from and an A1 config)")
+    parser.add_argument("--full-train-eval", action="store_true",
+                        help="also log agreement and KL on all 50k clean training images")
     parser.add_argument("--concurrency", type=int, default=1)
     parser.add_argument("--runs", type=Path, default=RUNS)
     arguments = parser.parse_args()
@@ -430,6 +432,13 @@ def main() -> None:
     data = CIFAR100GPU()
     teacher = load_teacher()
     teacher_logits = {k: v.cuda() for k, v in torch.load(TEACHER_LOGITS, weights_only=True).items()}
+    train_teacher = None
+    if arguments.full_train_eval:  # Amendment 6; cached teacher logits on the 50k images
+        from train_eval import TRAIN_LOGITS, logits_on_train
+        if not TRAIN_LOGITS.exists():
+            torch.save(logits_on_train(teacher, data).cpu(), TRAIN_LOGITS)
+        train_teacher = F.log_softmax(torch.load(TRAIN_LOGITS, map_location="cuda",
+                                                 weights_only=True), dim=-1)
     student = initial_student(teacher, arguments.lam, arguments.seed)
     if arguments.init_from is not None:
         student.load_state_dict(torch.load(arguments.init_from / "final_model.pt",
@@ -493,6 +502,14 @@ def main() -> None:
         if arm.schedule.adaptive is not None:
             row["t"] = arm.schedule.adaptive.t
         row.update(evaluate(student, data, teacher_logits))
+        if train_teacher is not None:
+            from train_eval import logits_on_train
+            student_log_probs = F.log_softmax(logits_on_train(student, data), dim=-1)
+            student.train()
+            row["train50k_agreement"] = float(
+                (student_log_probs.argmax(-1) == train_teacher.argmax(-1)).float().mean())
+            row["train50k_kl"] = float((train_teacher.exp() * (train_teacher - student_log_probs))
+                                       .sum(-1).mean())
         append_jsonl(metrics_path, row)
         loss_sum, loss_count = 0.0, 0
         return row
