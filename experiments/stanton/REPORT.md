@@ -393,3 +393,44 @@ concurrency while several queues shared the GPU; it is an attribution, not the b
 Phase 4 training (Amendments 8–10) is running: A1-1 at five λ, the λ = 0 seed-0 anchor run, and
 seeds 1 and 2 at λ ∈ {0, 0.25} for A1-7, A2-3, A5-6, A6-3, A1MSE-1 and A1-anchor-mu0.01. Expected
 to finish around 18:00–20:00. **The test split stays closed until Fred approves this report.**
+
+## Phase 3 correction and Phase 4 training status (2026-10-01 20:40, validation only)
+
+All Phase 4 training finished at 17:10 (30 of 30 runs, none failed); the test split is still
+closed. The extra seeds and Amendment 8 **correct a Phase 3 headline**:
+
+- **A1-1 (Stanton's exact recipe, no warmup) at `B_full` reproduces Stanton's barrier**: validation
+  agreement 70.4 / 71.0 / **71.2** / 97.2 / 96.9% and train agreement 84.1 / 84.4 / **84.3** /
+  98.4 / 98.5% at λ = 0 / 0.1 / 0.25 / 0.4 / 0.5. λ = 0.25 behaves like λ = 0; the transition lies
+  between 0.25 and 0.4, as in Stanton et al. Figure 6(b).
+- **A1-7 (warmup) at λ = 0.25 is seed-dependent**: 89.8 / 76.7 / 80.2% over seeds 0 / 1 / 2
+  (82.3 ± 6.8%). The seed-0 value used in the Phase 3 headline ("the barrier mostly disappears
+  under our recipe") was the best of three. Corrected statement: warmup sometimes carries A1
+  past the λ = 0.25 barrier. The λ = 0.25 patience result (A1-7 at 4×: 97.8%) is also seed 0 only.
+
+3-seed validation agreement (mean ± sample sd, seeds 0, 1, 2) and 50k train agreement:
+
+| λ | arm | val agree | train agree (50k) | per seed (val) |
+|---:|---|---:|---:|---|
+| 0 | A1-7 | 71.35 ± 0.15% | 84.49 ± 0.12% | 71.2, 71.4, 71.5 |
+| 0 | A2-3 | 71.41 ± 1.06% | 83.11 ± 0.17% | 72.0, 72.0, 70.2 |
+| 0 | A5-6 | 72.91 ± 0.12% | 77.37 ± 0.10% | 72.9, 72.8, 73.0 |
+| 0 | A6-3 | 72.02 ± 0.39% | 84.01 ± 0.06% | 72.3, 72.2, 71.6 |
+| 0 | A1-MSE (diag.) | 71.77 ± 0.27% | 76.64 ± 0.21% | 71.5, 72.0, 71.9 |
+| 0 | anchor μ = 0.01 (diag.) | 71.04 ± 0.36% | 83.63 ± 0.18% | 71.1, 70.7, 71.4 |
+| 0.25 | A1-7 | 82.25 ± 6.80% | 89.64 ± 3.55% | 89.8, 76.7, 80.2 |
+| 0.25 | A2-3 | 94.49 ± 1.12% | 96.70 ± 0.61% | 93.3, 94.7, 95.5 |
+| 0.25 | A5-6 | 96.60 ± 2.81% | 97.72 ± 1.88% | 93.4, 98.0, 98.4 |
+| 0.25 | A6-3 | 78.85 ± 4.95% | 87.88 ± 2.58% | 84.2, 77.9, 74.5 |
+| 0.25 | A1-MSE (diag.) | 91.20 ± 4.31% | 93.62 ± 3.53% | 94.3, 86.3, 93.0 |
+| 0.25 | anchor μ = 0.01 (diag.) | 96.18 ± 0.30% | 97.67 ± 0.19% | 96.0, 96.5, 96.0 |
+
+Reading (validation, not the decision rule): at λ = 0.25 the moving target (A2), Annealing-KD
+(A5) and the anchor cross the barrier on every seed, while A1-7 and A6 do so only sometimes; the
+anchor is the most reliable (sd 0.3). The anchor's benefit vanishes at λ = 0 (71.0%), so it
+depends on the teacher component of the initialization. At λ = 0, A5-6 is 1.6 pp above A1-7 with
+small seed spread, but has 7 pp *lower* train agreement. The decision rule will be applied to
+the test split once, after Fred's approval.
+
+Budget: GPU busy-clock 25.3 GPU-h of 40; all training is finished. Remaining: one test
+evaluation (minutes).
