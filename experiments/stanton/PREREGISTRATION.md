@@ -415,3 +415,24 @@ benefit depends on the teacher component of the initialization. Because the anch
 only at λ = 0.25, a seed-0 anchor run at λ = 0, `B_full` is added so both λ have three seeds.
 All seed-0 results of these arms were known when this amendment was written (Phase 3 summary).
 
+### Amendment 11 (2026-10-01, POST-HOC exploratory follow-up; requested by Fred; recorded before any of its runs started)
+
+**Post-hoc.** Motivated by the seed-0 patience result at λ = 0 (A5-6 at `4·B_full`: 85.0%
+validation agreement versus 73.2% for A1-7), which was seen before this amendment was written.
+The decision rule (§8) and its outcomes are closed and are not revisited by these runs.
+
+Runs (λ = 0, `4·B_full`, schedules stretched with the budget as in Amendment 7, validation and 50k
+clean-train metrics logged against compute):
+
+1. A5-6, seeds 1 and 2: does the seed-0 validation result replicate?
+2. A1MSE-1, seed 0: is the λ = 0 effect due to the MSE loss or to the annealing?
+3. A1-7, seed 1 (budget permitting): spread of the baseline at 4×.
+
+**Pre-recorded replication criterion (Fred):** both new A5-6 seeds (1 and 2) reach at least 80.0%
+validation agreement at the end of `4·B_full` (A1-7 at 4×, seed 0: 73.2%).
+
+Reported: validation agreement, 50k train agreement and train KL against compute; and, labeled
+post-hoc, test agreement of these runs and of the existing λ = 0 `4·B_full` runs (A1-7, A2-3,
+A5-6, seed 0). These test evaluations happen after the single preregistered test evaluation and
+are exploratory only.
+
