@@ -182,6 +182,8 @@ seed (0) per configuration; identical reruns differ by about 0.5 pp of validatio
    optimizer plus 10% lr warmup) reaches 89.8% validation and 93.7% train agreement at 1×,
    and **97.8% / 98.8% at 4×** (patience check). The barrier is a compute and optimizer-schedule
    effect in our setup, not a hard basin barrier.
+   *[Corrected 2026-10-01 20:40: seed 0 was A1-7's best seed; see "Phase 3 correction" below and
+   the addendum in RESULTS.md. Original text kept.]*
 4. At λ = 0.25 and 1×, the moving target (A2, 93.3%), Annealing-KD (A5, 93.4%) and plain logit
    MSE without annealing (A1-MSE, 94.3%) all beat A1-7 (89.8%). **A1-MSE ≥ A5-6** says A5's gain
    is a loss effect, not an annealing effect. **A weak anchor to the initialization beats all of
@@ -273,7 +275,7 @@ Figures (`experiments/stanton/figures/`):
 
 **Comparison with Stanton et al. Figure 6(b).** Stanton report near-perfect train agreement for
 λ ≥ 0.375 and a sharp drop at λ ≤ 0.25 (SGD, 300 epochs; train agreement 78.95% at λ = 0).
-In our setup the transition sits between **λ = 0.1 and 0.25**, not between 0.25 and 0.375: at
+*[Corrected 2026-10-01 20:40, see below.]* In our setup the transition sits between **λ = 0.1 and 0.25**, not between 0.25 and 0.375: at
 λ = 0.25 every first-order arm reaches 90.8–96.3% train agreement at 1×. Differences that matter:
 a 200-epoch-equivalent budget (theirs: 300 epochs); our λ grid {0, 0.1, 0.25, 0.4, 0.5} (theirs
 includes 0.375); GroupNorm(1, C) instead of their LayerNorm ResNet-20; a weaker teacher (65.8%

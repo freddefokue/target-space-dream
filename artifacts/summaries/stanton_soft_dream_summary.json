@@ -1,0 +1,201 @@
+{
+ "compute": {
+  "B_full_FE": 44677249.12770857,
+  "cap_gpu_hours": 40,
+  "gpu_busy_hours": 25.3,
+  "unit": "forward-equivalents per image (CUDA-graph GPU time)"
+ },
+ "date": "2026-10-01",
+ "model": "ResNet20GN1 teacher and student",
+ "outcomes": {
+  "0": {
+   "GO": "not met",
+   "NO-GO": "not met",
+   "second order is the lever": "not met",
+   "teacher trajectory suffices": "not met",
+   "temperature suffices": "not applicable (neither A2 nor A4 beats A1 by the GO margin)",
+   "the path is the lever": "not met"
+  },
+  "0.25": {
+   "GO": "not met",
+   "NO-GO": "not met",
+   "second order is the lever": "not met",
+   "teacher trajectory suffices": "not met",
+   "temperature suffices": "met",
+   "the path is the lever": "not met"
+  }
+ },
+ "patience_lambda0_criterion": "not met (best 4x train agreement A5-6 89.54%; A1-7 87.28%)",
+ "repository": "target-space-dream, branch soft-dream-stanton",
+ "sd": "sample standard deviation over seeds 0,1,2",
+ "selected_configs": {
+  "A1": "A1-7",
+  "A1-MSE": "A1MSE-1",
+  "A2": "A2-3",
+  "A3": "A3-6",
+  "A4": "A4-6",
+  "A5": "A5-6",
+  "A6": "A6-3"
+ },
+ "study": "soft Dream on Stanton et al. CIFAR-100 self-distillation fidelity benchmark",
+ "teacher_test_accuracy": 0.6579999923706055,
+ "test": {
+  "0": {
+   "A1": {
+    "agreement_per_seed": [
+     0.710599958896637,
+     0.7103999853134155,
+     0.7129999995231628
+    ],
+    "kl_mean": 0.4896015723546346,
+    "mean": 0.7113333145777384,
+    "sd": 0.0014468505067818343
+   },
+   "A1-MSE": {
+    "agreement_per_seed": [
+     0.7217999696731567,
+     0.7217999696731567,
+     0.7116000056266785
+    ],
+    "kl_mean": 0.4535936415195465,
+    "mean": 0.7183999816576639,
+    "sd": 0.005888951987958735
+   },
+   "A2": {
+    "agreement_per_seed": [
+     0.715999960899353,
+     0.703000009059906,
+     0.7069999575614929
+    ],
+    "kl_mean": 0.478817751010259,
+    "mean": 0.7086666425069174,
+    "sd": 0.00665830804239814
+   },
+   "A3": {
+    "agreement_per_seed": [
+     0.5015999674797058
+    ],
+    "kl_mean": 1.1219180822372437,
+    "mean": 0.5015999674797058,
+    "sd": null
+   },
+   "A4": {
+    "agreement_per_seed": [
+     0.5130000114440918
+    ],
+    "kl_mean": 1.0983706712722778,
+    "mean": 0.5130000114440918,
+    "sd": null
+   },
+   "A5": {
+    "agreement_per_seed": [
+     0.7375999689102173,
+     0.7209999561309814,
+     0.7245999574661255
+    ],
+    "kl_mean": 0.4217545688152313,
+    "mean": 0.727733294169108,
+    "sd": 0.00873232244241998
+   },
+   "A6": {
+    "agreement_per_seed": [
+     0.72079998254776,
+     0.7163999676704407,
+     0.7134000062942505
+    ],
+    "kl_mean": 0.4591171046098073,
+    "mean": 0.716866652170817,
+    "sd": 0.003721996501246995
+   },
+   "anchor": {
+    "agreement_per_seed": [
+     0.7055999636650085,
+     0.6972000002861023,
+     0.7077999711036682
+    ],
+    "kl_mean": 0.502715935309728,
+    "mean": 0.7035333116849264,
+    "sd": 0.005594026558606556
+   }
+  },
+  "0.25": {
+   "A1": {
+    "agreement_per_seed": [
+     0.8887999653816223,
+     0.7675999999046326,
+     0.7895999550819397
+    ],
+    "kl_mean": 0.19517824798822403,
+    "mean": 0.8153333067893982,
+    "sd": 0.06456788637148264
+   },
+   "A1-MSE": {
+    "agreement_per_seed": [
+     0.9365999698638916,
+     0.8499999642372131,
+     0.9195999503135681
+    ],
+    "kl_mean": 0.05384516343474388,
+    "mean": 0.9020666281382242,
+    "sd": 0.045885218573234327
+   },
+   "A2": {
+    "agreement_per_seed": [
+     0.9350000023841858,
+     0.9493999481201172,
+     0.9527999758720398
+    ],
+    "kl_mean": 0.01569140361001094,
+    "mean": 0.9457333087921143,
+    "sd": 0.00944949453745118
+   },
+   "A3": {
+    "agreement_per_seed": [
+     0.5888000130653381
+    ],
+    "kl_mean": 0.8005862832069397,
+    "mean": 0.5888000130653381,
+    "sd": null
+   },
+   "A4": {
+    "agreement_per_seed": [
+     0.5539999604225159
+    ],
+    "kl_mean": 0.9436405301094055,
+    "mean": 0.5539999604225159,
+    "sd": null
+   },
+   "A5": {
+    "agreement_per_seed": [
+     0.9277999997138977,
+     0.9747999906539917,
+     0.9827999472618103
+    ],
+    "kl_mean": 0.008997091286194822,
+    "mean": 0.9617999792098999,
+    "sd": 0.02971529540031821
+   },
+   "A6": {
+    "agreement_per_seed": [
+     0.8283999562263489,
+     0.771399974822998,
+     0.7461999654769897
+    ],
+    "kl_mean": 0.26389849185943604,
+    "mean": 0.7819999655087789,
+    "sd": 0.04211269964871241
+   },
+   "anchor": {
+    "agreement_per_seed": [
+     0.9629999995231628,
+     0.9629999995231628,
+     0.9589999914169312
+    ],
+    "kl_mean": 0.007498796563595533,
+    "mean": 0.9616666634877523,
+    "sd": 0.002309405756893551
+   }
+  }
+ },
+ "verdict": "GO not met at lambda 0 and 0.25; Gauss-Newton arms 20-26 pp behind. lambda=0: A5 beats A1 by +1.64 pp (within 2 SD of A1-MSE). lambda=0.25: A2 and A5 beat A1 (+13.0, +14.7 pp), temperature-suffices met; anchor diagnostic 96.17 +/- 0.23%."
+}

@@ -390,11 +390,42 @@ def handoff_table() -> None:
                            for v in ("primary", "secondary")) + " |")
 
 
+def test_figure() -> Path | None:
+    """Test agreement per seed (dots) and 3-seed mean (bar mark) per arm, one panel per λ."""
+
+    path_in = RUNS / "test_results.json"
+    if not path_in.exists():
+        return None
+    results = json.loads(path_in.read_text())["results"]
+    order = [("A1-7", "A1"), ("A2-3", "A2"), ("A3-6", "A3"), ("A4-6", "A4"), ("A5-6", "A5"),
+             ("A6-3", "A6"), ("A1MSE-1", "A1-MSE*"), ("A1-anchor-mu0.01", "anchor*")]
+    figure, axes = plt.subplots(1, 2, figsize=(10, 3.6), sharey=True)
+    for axis, lam in zip(axes, (0.0, 0.25)):
+        for index, (config, label) in enumerate(order):
+            values = [r["test_agreement"] for r in results
+                      if r["config"] == config and r["lam"] == lam]
+            color = CATEGORICAL[index % len(CATEGORICAL)]
+            axis.scatter([index] * len(values), values, s=36, color=color, zorder=3,
+                         edgecolors=SURFACE, linewidths=1.5)
+            mean = sum(values) / len(values)
+            axis.plot([index - 0.3, index + 0.3], [mean, mean], color=INK_2, linewidth=2)
+        axis.set_xticks(range(len(order)), [label for _, label in order], fontsize=8)
+        axis.set_title(f"λ = {lam:g}: test agreement (dots: seeds; bar: mean)")
+    axes[0].set_ylabel("test agreement with the teacher")
+    figure.text(0.01, 0.01, "* diagnostics, not part of the decision rule; A3 and A4: seed 0 only",
+                fontsize=7, color=INK_2)
+    figure.tight_layout(rect=(0, 0.04, 1, 1))
+    path = FIGURES / "test_agreement_per_seed.png"
+    figure.savefig(path, dpi=150)
+    plt.close(figure)
+    return path
+
+
 def figures() -> None:
     FIGURES.mkdir(exist_ok=True)
     style()
     paths = [tuning_distance_figure(), *sweep_figures(), train_agreement_figure(),
-             patience_figure()]
+             patience_figure(), test_figure()]
     print("\n".join(str(path) for path in paths if path))
 
 
