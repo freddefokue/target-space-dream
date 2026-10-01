@@ -2,7 +2,8 @@
 """POST-HOC test evaluation for Amendment 11 (exploratory; the decision rule stays closed).
 
 Evaluates, once, the λ = 0 ``4·B_full`` runs: the existing seed-0 runs of A1-7, A2-3 and A5-6
-(Amendment 7) and the Amendment 11 runs (A5-6 seeds 1 and 2, A1MSE-1 seed 0, A1-7-tau4 seed 0, A1-7 seed 1).
+(Amendment 7) and the Amendment 11 runs (A5-6 seeds 1 and 2, A1MSE-1 seed 0, A1-7-tau4 seed 0,
+A1-7 seed 1).
 Writes ``/workspace/runs/test_results_posthoc_amendment11.json`` and refuses to run if it exists.
 """
 
