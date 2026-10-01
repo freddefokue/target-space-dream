@@ -310,9 +310,8 @@ def train_agreement_figure() -> Path | None:
                       markersize=5, label=arm, linestyle="--" if arm == "A1-MSE" else "-")
     axis.set_xlabel("λ (θ_init = λ θ_T + (1 − λ) θ_R)")
     axis.set_ylabel("train agreement (50k, no augmentation)")
-    axis.set_title("Train agreement vs λ (cf. Stanton et al. Fig. 6b; 200-epoch-equivalent "
-                   "budget, λ ∈ {0, .1, .25, .4, .5})", fontsize=8)
-    axis.legend(fontsize=7)
+    axis.set_title("Train agreement vs λ, seed 0 (cf. Stanton et al. Fig. 6b)", fontsize=9)
+    axis.legend(fontsize=7, loc="lower right", ncol=2)
     figure.tight_layout()
     path = FIGURES / "sweep_train_agreement_vs_lambda.png"
     figure.savefig(path, dpi=150)
@@ -320,19 +319,91 @@ def train_agreement_figure() -> Path | None:
     return path
 
 
+def patience_figure() -> Path | None:
+    """4×-budget runs (Amendments 6, 7) against compute, with the 1× sweep endpoints marked."""
+
+    long_runs = [load_run(d) for d in sorted(RUNS.glob("*_s0_4"))]
+    long_runs = [r for r in long_runs if r]
+    if not long_runs:
+        return None
+    lambdas = sorted({r["final"]["lam"] for r in long_runs})
+    keys = (("val_agreement", "validation agreement"), ("train50k_agreement", "train agreement (50k)"),
+            ("train50k_kl", "train KL(p_T ‖ p_S) (50k)"))
+    figure, axes = plt.subplots(len(lambdas), 3, figsize=(10.5, 3.0 * len(lambdas)), squeeze=False)
+    for row_axes, lam in zip(axes, lambdas):
+        for axis, (key, label) in zip(row_axes, keys):
+            for run in [r for r in long_runs if r["final"]["lam"] == lam]:
+                arm = arm_of(run)
+                color = CATEGORICAL[ARMS.index(arm)]
+                xs = [4 * row["fraction"] for row in run["rows"] if key in row]
+                ys = [row[key] for row in run["rows"] if key in row]
+                axis.plot(xs, ys, color=color, label=f"{config_of(run)} 4×")
+                one = RUNS / f"{config_of(run)}_lam{lam:g}_s0_full"
+                if (one / "train_full_eval.json").exists():
+                    final = json.loads((one / "final.json").read_text())
+                    train = json.loads((one / "train_full_eval.json").read_text())
+                    value = {"val_agreement": final["val_agreement"],
+                             "train50k_agreement": train["train_agreement"],
+                             "train50k_kl": train["train_kl"]}[key]
+                    axis.plot([1.0], [value], marker="D", markersize=7, color=color,
+                              markeredgecolor=SURFACE, markeredgewidth=1.5, linestyle="none",
+                              label=f"{config_of(run)} 1× end")
+            if key == "train50k_kl":
+                axis.set_yscale("log")
+            axis.set_title(f"λ = {lam:g}: {label}")
+            axis.set_xlabel("compute (multiples of B_full)")
+        row_axes[0].legend(fontsize=7)
+    figure.tight_layout()
+    path = FIGURES / "patience_4x.png"
+    figure.savefig(path, dpi=150)
+    plt.close(figure)
+    return path
+
+
+def handoff_table() -> None:
+    """Hand-off diagnostic: endpoint before, and after both lr variants (validation, 50k train)."""
+
+    print("| source endpoint | λ | before: val / train50k | primary: val / train50k | "
+          "secondary: val / train50k |")
+    print("|---|---:|---|---|---|")
+    for directory in sorted(RUNS.glob("*_s0_full")):
+        if "_from-" in directory.name or not (directory / "final.json").exists():
+            continue
+        variants = {}
+        for variant in ("primary", "secondary"):
+            hits = list(RUNS.glob(f"*_tune_ho-{variant}_from-{directory.name}"))
+            if hits and (hits[0] / "final.json").exists():
+                variants[variant] = hits[0]
+        if not variants:
+            continue
+
+        def cell(path: Path) -> str:
+            final = json.loads((path / "final.json").read_text())
+            train_path = path / "train_full_eval.json"
+            train = (f"{100 * json.loads(train_path.read_text())['train_agreement']:.2f}%"
+                     if train_path.exists() else "–")
+            return f"{100 * final['val_agreement']:.2f}% / {train}"
+
+        lam = json.loads((directory / "final.json").read_text())["lam"]
+        print(f"| {directory.name.split('_lam')[0]} | {lam:g} | {cell(directory)} | "
+              + " | ".join(cell(variants[v]) if v in variants else "–"
+                           for v in ("primary", "secondary")) + " |")
+
+
 def figures() -> None:
     FIGURES.mkdir(exist_ok=True)
     style()
-    paths = [tuning_distance_figure(), *sweep_figures(), train_agreement_figure()]
+    paths = [tuning_distance_figure(), *sweep_figures(), train_agreement_figure(),
+             patience_figure()]
     print("\n".join(str(path) for path in paths if path))
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("what", choices=["tuning", "figures", "resumes", "train"])
+    parser.add_argument("what", choices=["tuning", "figures", "resumes", "train", "handoff"])
     arguments = parser.parse_args()
-    {"tuning": tuning, "figures": figures, "resumes": resumes,
-     "train": train_table}[arguments.what]()
+    {"tuning": tuning, "figures": figures, "resumes": resumes, "train": train_table,
+     "handoff": handoff_table}[arguments.what]()
 
 
 if __name__ == "__main__":
