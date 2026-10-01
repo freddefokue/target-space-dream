@@ -2,7 +2,7 @@
 """POST-HOC test evaluation for Amendment 11 (exploratory; the decision rule stays closed).
 
 Evaluates, once, the λ = 0 ``4·B_full`` runs: the existing seed-0 runs of A1-7, A2-3 and A5-6
-(Amendment 7) and the Amendment 11 runs (A5-6 seeds 1 and 2, A1MSE-1 seed 0, A1-7 seed 1).
+(Amendment 7) and the Amendment 11 runs (A5-6 seeds 1 and 2, A1MSE-1 seed 0, A1-7-tau4 seed 0, A1-7 seed 1).
 Writes ``/workspace/runs/test_results_posthoc_amendment11.json`` and refuses to run if it exists.
 """
 
@@ -20,7 +20,8 @@ from teacher import load_teacher, logits_on
 
 OUT = RUNS / "test_results_posthoc_amendment11.json"
 RUNS_4X = ["A1-7_lam0_s0_4", "A2-3_lam0_s0_4", "A5-6_lam0_s0_4",
-           "A5-6_lam0_s1_4", "A5-6_lam0_s2_4", "A1MSE-1_lam0_s0_4", "A1-7_lam0_s1_4"]
+           "A5-6_lam0_s1_4", "A5-6_lam0_s2_4", "A1MSE-1_lam0_s0_4", "A1-7-tau4_lam0_s0_4",
+           "A1-7_lam0_s1_4"]
 
 
 def main() -> None:

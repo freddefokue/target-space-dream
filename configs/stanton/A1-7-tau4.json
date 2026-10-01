@@ -1,0 +1,16 @@
+{
+  "arm": "A1",
+  "batch": 128,
+  "group": "A1-tau4",
+  "inherits": "A1-7",
+  "lr": 0.05,
+  "lr_min": 1e-06,
+  "momentum": 0.9,
+  "name": "A1-7-tau4",
+  "nesterov": true,
+  "note": "A1-7 with Stanton's fixed tau = 4 loss, tau^2 KL(softmax(f_T/4) || softmax(f_S/4)), no annealing (Amendment 11)",
+  "optimizer": "sgd",
+  "temperature": 4.0,
+  "warmup": 0.1,
+  "weight_decay": 0.0001
+}

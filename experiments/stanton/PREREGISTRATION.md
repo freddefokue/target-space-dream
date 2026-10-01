@@ -436,3 +436,10 @@ post-hoc, test agreement of these runs and of the existing λ = 0 `4·B_full` ru
 A5-6, seed 0). These test evaluations happen after the single preregistered test evaluation and
 are exploratory only.
 
+Addendum to Amendment 11 (2026-10-01, Fred; recorded before this run started): 4. A1-7 with a
+fixed temperature τ = 4 (Stanton's default loss, `τ²·KL(softmax(f_T/τ) ‖ softmax(f_S/τ))`, no
+annealing; config `A1-7-tau4`), λ = 0, seed 0, `4·B_full`, same metrics. Purpose: separate
+"soft targets" from "annealing" in A5-6's λ = 0 gain. Priority after A1-MSE and before A1-7
+seed 1; since the budget fits all five runs (≈32 of 40 GPU-h projected), all run.
+It is included in the post-hoc test evaluation.
+
