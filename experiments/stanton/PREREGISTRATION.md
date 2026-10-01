@@ -203,8 +203,10 @@ hand-off.
 3. λ sweep (arms A1–A6): each arm's selected config at `B_full`, seed 0, λ ∈ {0, 0.1, 0.25, 0.4, 0.5}.
    Positive control: A1 at λ = 0.5 must reach train-subset agreement ≥ 90%; otherwise stop and
    report. (Amendment 1: λ = 0.5 added and used as the control; 0.4 kept in the sweep.)
-4. Finals: seeds 1 and 2, λ ∈ {0, 0.25}, every arm (A1–A6).
-5. Test evaluation of the 3 seeds × 2 λ × 6 arms final models, once.
+4. Finals: seeds 1 and 2, λ ∈ {0, 0.25}, for A1, A2, A5 and A6 (A3 and A4 dropped by
+   Amendment 9), plus the diagnostics A1-MSE and the anchor run (μ = 0.01) (Amendment 10).
+5. Test evaluation, once, after Fred has approved the Phase 3 report: the 3 seeds × 2 λ final
+   models of A1, A2, A5, A6, A1-MSE and the anchor run, and the seed-0 models of A3 and A4.
 
 Hand-off diagnostic (Amendments 3 and 4; not part of the decision rule): after the λ sweep, the
 seed-0 endpoints of A2, A4 and A6 at λ ∈ {0, 0.25} are continued with A1's selected configuration
@@ -378,4 +380,38 @@ at least 95.0% train agreement (all 50k distillation images, no augmentation, fi
 end of `4·B_full`) at λ = 0, and A1-7's train agreement at the end of its `4·B_full` run is at
 least 5.0 percentage points lower than that arm's. Both qualifying arms are reported if both
 qualify.
+
+### Amendment 8 (2026-10-01, before any A1-1 full-budget run; requested by Fred)
+
+Diagnostic, not part of the decision rule: A1-1 (Stanton's exact optimizer recipe, no warmup)
+at `B_full`, seed 0, λ ∈ {0, 0.1, 0.25, 0.4, 0.5}, with validation and 50k clean-train metrics.
+Purpose: locate the λ barrier under Stanton's recipe in our setup, and separate the warmup effect
+(A1-7 vs A1-1 at equal budget) from the budget effect (A1-1 at `B_full/4` vs `B_full`).
+
+### Amendment 9 (2026-10-01, before any final-seed run; requested by Fred)
+
+A3-6 and A4-6 are dropped from the extra seeds. Reason: at seed 0 they trail every first-order
+arm by about 20 pp of validation agreement (e.g. 51% vs 71–73% at λ = 0), far beyond the
+≈0.5 pp rerun noise, so no outcome of the decision rule can plausibly depend on them. Their seed-0
+results stay in the report, and their seed-0 models are evaluated on the test split once.
+
+Consequences for §8, fixed now, before any test result exists: outcomes that require A3 or A4
+to beat or to match another arm ("GO", "second order is the lever", "the path is the lever",
+"teacher trajectory suffices") are evaluated with their seed-0 test agreement in place of a
+3-seed mean. Each such outcome is recorded as **not met** if the seed-0 test agreement of the
+required A3/A4 run is more than 10 pp below the 3-seed mean of A1; otherwise it is flagged as
+undecidable and reported to Fred. All other comparisons use 3-seed statistics as before.
+
+Note: as defined in §8, "the path is the lever" and "teacher trajectory suffices" are stated
+relative to A4, so with A4 far behind they cannot be met. Comparisons of A2 and A6 against A1
+and A5 are reported descriptively with the same GO-margin arithmetic; they do not create a new
+outcome unless Fred amends §8 before the test split is opened.
+
+### Amendment 10 (2026-10-01, before any of these runs; requested by Fred)
+
+Diagnostics in the final seeds, not part of the decision rule: A1-MSE (A1MSE-1) and the anchor
+run (A1-anchor-mu0.01) at seeds 1 and 2, λ ∈ {0, 0.25}. The anchor at λ = 0 tests whether its
+benefit depends on the teacher component of the initialization. Because the anchor diagnostic ran
+only at λ = 0.25, a seed-0 anchor run at λ = 0, `B_full` is added so both λ have three seeds.
+All seed-0 results of these arms were known when this amendment was written (Phase 3 summary).
 
