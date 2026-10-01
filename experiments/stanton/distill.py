@@ -286,7 +286,7 @@ class FirstOrder(Distiller):
         loss.backward()
         self.counter.charge("fwd_bwd", images.shape[0])
         self.optimizer.step()
-        return {"loss": loss, "lr": lr, **values}
+        return {"loss": loss.detach(), "lr": lr, **values}
 
     def state_dict(self) -> dict:
         return {"optimizer": self.optimizer.state_dict(), "schedule": self.schedule.state_dict()}
