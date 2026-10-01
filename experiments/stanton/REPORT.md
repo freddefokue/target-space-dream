@@ -262,7 +262,7 @@ Final distance to the teacher's weights ‖θ − θ_T‖₂:
 Figures (`experiments/stanton/figures/`):
 - `sweep_teacher_distance.png`: ‖θ − θ_T‖ against compute for every λ > 0 run of every arm
   (y-axes differ per arm). First-order arms at λ ≥ 0.25 move *towards* the teacher; at
-  λ = 0.1 they move away (40 → 55–65). The GN arms move away at every λ.
+  λ = 0.1 they move away (≈40 → 48–65). The GN arms move away at every λ.
 - `tuning_teacher_distance.png`: the same for all tuning runs (λ = 0.25).
 - `sweep_agreement.png`, `sweep_kl.png`: validation agreement and KL against compute, one panel
   per λ. The continuation arm A2 starts slowly (its early targets are close to its own outputs)
@@ -298,7 +298,8 @@ strongest intervention at λ = 0.25 and ends closest to the teacher's weights. T
 run (Amendment 10) tests whether this needs the teacher component; it is running.
 
 **A1-MSE (Amendment 5).** A1-7 with A5-6's logit MSE and no annealing matches or beats A5-6 at
-every λ ≥ 0.25 (94.3 vs 93.4, 98.9 vs 98.7, 99.0 vs 95.5%), and is equal at λ ≤ 0.1. At λ ≤ 0.1
+every λ ≥ 0.25 (94.3 vs 93.4, 98.9 vs 98.7, 99.0 vs 95.5%), and is within 1.5 pp at λ ≤ 0.1
+(71.5 vs 72.9, 72.7 vs 73.3%). At λ ≤ 0.1
 both MSE arms have *lower* train agreement than KL arms (77% vs 83–85%) with equal validation
 agreement. So in A5-6 the loss matters and the annealing does not, at 1×.
 
