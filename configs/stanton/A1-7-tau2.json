@@ -1,0 +1,16 @@
+{
+  "arm": "A1",
+  "batch": 128,
+  "group": "A1-tau2",
+  "inherits": "A1-7",
+  "lr": 0.05,
+  "lr_min": 1e-06,
+  "momentum": 0.9,
+  "name": "A1-7-tau2",
+  "nesterov": true,
+  "note": "A1-7 with fixed tau = 2: tau^2 KL(softmax(f_T/tau) || softmax(f_S/tau)), no annealing (follow-up)",
+  "optimizer": "sgd",
+  "temperature": 2.0,
+  "warmup": 0.1,
+  "weight_decay": 0.0001
+}

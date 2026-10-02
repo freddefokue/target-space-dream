@@ -1,0 +1,20 @@
+{
+  "arm": "A5",
+  "batch": 128,
+  "group": "A5-short",
+  "inherits": "A5-6",
+  "lr": 0.05,
+  "lr_min": 1e-06,
+  "momentum": 0.9,
+  "name": "A5-short",
+  "nesterov": true,
+  "optimizer": "sgd",
+  "schedule": {
+    "kind": "annealing_kd",
+    "note": "A5-6 annealing (T = 10..1 in ten stages) compressed into the first 12.5% of the run; in a 4x B_full run that is the first 0.5 B_full, as in the 1x runs; then T = 1 (follow-up)",
+    "phi": 0.125,
+    "tau_max": 10
+  },
+  "warmup": 0.1,
+  "weight_decay": 0.0001
+}

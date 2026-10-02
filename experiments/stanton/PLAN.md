@@ -167,3 +167,4 @@ reproduce the step and FE trajectory exactly. Seed replicates capture this noise
 - D13 (Amendment 5). 50k clean-train agreement and KL for selected tuning configs, sweep and final
   seeds (`train_eval.py`), reported instead of train loss; A1-MSE diagnostic arm; list of resumed
   runs with restoration status.
+- D14 (2026-10-02). GPU-hour cap raised to 50 for the separate follow-up (`FOLLOWUP_PREREG.md`).
