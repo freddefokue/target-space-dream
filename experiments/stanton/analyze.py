@@ -322,7 +322,8 @@ def train_agreement_figure() -> Path | None:
 def patience_figure() -> Path | None:
     """4×-budget runs (Amendments 6, 7) against compute, with the 1× sweep endpoints marked."""
 
-    long_runs = [load_run(d) for d in sorted(RUNS.glob("*_s0_4"))]
+    long_runs = [load_run(d) for d in sorted(RUNS.glob("*_s0_4"))
+                 if d.name.split("_lam")[0] in ("A1-7", "A2-3", "A5-6")]  # Amendments 6, 7
     long_runs = [r for r in long_runs if r]
     if not long_runs:
         return None
@@ -355,6 +356,42 @@ def patience_figure() -> Path | None:
         row_axes[0].legend(fontsize=7)
     figure.tight_layout()
     path = FIGURES / "patience_4x.png"
+    figure.savefig(path, dpi=150)
+    plt.close(figure)
+    return path
+
+
+def amendment11_figure() -> Path | None:
+    """POST-HOC λ = 0, 4× runs (Amendments 7 and 11) against compute."""
+
+    names = [("A1-7_lam0_s0_4", "A1-7 s0", 0), ("A1-7_lam0_s1_4", "A1-7 s1", 0),
+             ("A2-3_lam0_s0_4", "A2-3 s0", 1), ("A5-6_lam0_s0_4", "A5-6 s0", 4),
+             ("A5-6_lam0_s1_4", "A5-6 s1", 4), ("A5-6_lam0_s2_4", "A5-6 s2", 4),
+             ("A1MSE-1_lam0_s0_4", "A1-MSE s0", 6), ("A1-7-tau4_lam0_s0_4", "A1-7 τ=4 s0", 7)]
+    runs_found = [(load_run(RUNS / n), label, c) for n, label, c in names]
+    if any(r is None for r, _, _ in runs_found):
+        return None
+    keys = (("val_agreement", "validation agreement"),
+            ("train50k_agreement", "train agreement (50k)"),
+            ("train50k_kl", "train KL(p_T ‖ p_S) (50k)"))
+    figure, axes = plt.subplots(1, 3, figsize=(12, 3.6))
+    styles = {}
+    for run, label, color_index in runs_found:
+        seen = styles.setdefault(color_index, 0)
+        styles[color_index] += 1
+        for axis, (key, title) in zip(axes, keys):
+            rows = [row for row in run["rows"] if key in row]
+            axis.plot([4 * row["fraction"] for row in rows], [row[key] for row in rows],
+                      color=CATEGORICAL[color_index], label=label,
+                      linestyle=("-", "--", ":")[seen % 3])
+            axis.set_title(f"λ = 0, 4× budget: {title}", fontsize=9)
+            axis.set_xlabel("compute (multiples of B_full)")
+    axes[2].set_yscale("log")
+    axes[0].legend(fontsize=7, ncol=2)
+    figure.text(0.01, 0.01, "POST-HOC (Amendment 11); A1-7 and A5-6 seed 0 are Amendment 7 runs",
+                fontsize=7, color=INK_2)
+    figure.tight_layout(rect=(0, 0.04, 1, 1))
+    path = FIGURES / "posthoc_lambda0_4x.png"
     figure.savefig(path, dpi=150)
     plt.close(figure)
     return path
@@ -425,7 +462,7 @@ def figures() -> None:
     FIGURES.mkdir(exist_ok=True)
     style()
     paths = [tuning_distance_figure(), *sweep_figures(), train_agreement_figure(),
-             patience_figure(), test_figure()]
+             patience_figure(), test_figure(), amendment11_figure()]
     print("\n".join(str(path) for path in paths if path))
 
 

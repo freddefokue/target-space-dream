@@ -250,3 +250,55 @@ attribution only. The test evaluation took 6 s.
 - `artifacts/summaries/stanton_soft_dream_summary.json`: compact summary.
 - Per-run data: `/workspace/runs/<run_id>/` (config, metrics, final metrics, 50k train evaluation,
   final weights); `/workspace/runs/test_results.json`.
+
+## Addendum (2026-10-02): POST-HOC λ = 0 follow-up at 4× compute (Amendment 11)
+
+**Post-hoc and exploratory.** Motivated by the seed-0 patience result; recorded in
+`PREREGISTRATION.md` (Amendment 11 and its addendum) before any of these runs started. The
+decision rule above is closed and unchanged. The test numbers below come from a second, post-hoc
+evaluation of the test split (`/workspace/runs/test_results_posthoc_amendment11.json`), made after
+the single preregistered one; they do not enter any decision.
+
+All runs: λ = 0, `4·B_full`, schedules stretched with the budget, end-of-run values.
+
+| run | seed | val agree at 1× / 2× / 3× / 4× compute | val agree (end) | train agree (50k) | train KL (50k) | **test agree (post-hoc)** | test KL | test acc |
+|---|---:|---|---:|---:|---:|---:|---:|---:|
+| A1-7 (baseline) | 0 | 67.1 / 67.9 / 71.7 / 73.2% | 73.22% | 87.28% | 0.200 | 72.12% | 0.455 | 68.22% |
+| A1-7 (baseline) | 1 | 67.2 / 68.7 / 70.4 / 72.8% | 72.76% | 87.31% | 0.203 | 72.12% | 0.461 | 68.76% |
+| A2-3 (moving target) | 0 | 64.9 / 69.8 / 71.3 / 73.5% | 73.46% | 86.90% | 0.197 | 72.80% | 0.432 | 67.76% |
+| A5-6 (Annealing-KD) | 0 | 69.1 / 72.3 / 83.2 / 85.0% | 85.02% | 89.54% | 0.091 | 85.44% | 0.121 | 65.92% |
+| A5-6 (Annealing-KD) | 1 | 68.4 / 76.4 / 83.7 / 86.1% | **86.10%** | 90.21% | 0.082 | 85.48% | 0.109 | 65.84% |
+| A5-6 (Annealing-KD) | 2 | 68.2 / 74.0 / 81.0 / 84.2% | **84.22%** | 87.92% | 0.117 | 82.78% | 0.153 | 65.40% |
+| A1-MSE (MSE, no annealing) | 0 | 69.5 / 71.8 / 74.0 / 74.8% | 74.76% | 80.36% | 0.272 | 74.38% | 0.380 | 65.08% |
+| A1-7, fixed τ = 4 (τ²-scaled KL, no annealing) | 0 | 68.9 / 71.9 / 76.3 / 80.2% | 80.24% | 85.85% | 0.159 | 79.78% | 0.224 | 66.40% |
+
+The "1× compute" column is the 4× run's own curve at `B_full` (stretched schedules), not the 1×
+sweep run. A5-6 over three seeds at 4×: validation 85.11 ± 0.94%, test 84.57 ± 1.55% (sample
+SD); A1-7 over two seeds: validation 72.99%, test 72.12%. Figure: `figures/posthoc_lambda0_4x.png`.
+
+**Verdict on Fred's pre-recorded replication criterion** (both new A5-6 seeds ≥ 80.0% validation
+agreement at the end of `4·B_full`): **MET.** Seed 1 reaches 86.10% and seed 2 84.22%, close to
+seed 0 (85.02%). The post-hoc test agreement agrees (85.5%, 82.8%; seed 0 85.4%).
+
+Reading (post-hoc, few seeds):
+
+1. **The λ = 0 effect replicates.** At 4× compute, Annealing-KD reaches ≈85% validation and test
+   agreement at λ = 0, ≈12 pp above the baseline (A1-7, two seeds, 72.8–73.2%) and the moving
+   target (A2-3, 73.5%). The separation appears only after ≈2× compute (at 1× all runs are at
+   67–69%).
+2. **It is not the MSE loss.** A1-MSE at 4× reaches only 74.8% (test 74.4%), close to the baseline.
+   At λ = 0 and 4× compute the MSE loss without annealing does almost nothing.
+3. **Soft targets explain part of it; annealing adds the rest.** A fixed τ = 4 (Stanton's default)
+   reaches 80.2% (test 79.8%), about 7 of the ≈12 pp. Annealing from τ_max = 10 down to 1
+   (A5-6) adds about 5 pp more (one seed for τ = 4).
+4. **Fidelity versus accuracy.** The high-fidelity A5-6 students score 65.4–65.9% test accuracy,
+   close to the teacher's 65.80%, whereas the baseline students reach 68.2–68.8%, above the
+   teacher: more training moves the baseline towards the labels rather than towards the teacher.
+5. **The baseline spread at 4× is small** (A1-7: 73.22 vs 72.76% validation, identical test
+   agreement), so the gap is not baseline noise.
+
+Caveats: one seed for A1-MSE, τ = 4 and A2-3 at 4×; post-hoc; stretched schedules (a 4× A5-6 run
+anneals over 2·`B_full`, which is a different schedule, not just more steps); at λ = 0.25 the
+seed-0 4× A5-6 run did *not* improve over 1× (91.4% vs 93.4%, Amendment 6).
+
+Compute for Amendment 11: ≈4.9 GPU-h. GPU busy-clock total: **30.1 GPU-h of 40**.

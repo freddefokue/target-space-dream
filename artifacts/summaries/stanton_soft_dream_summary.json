@@ -2,7 +2,7 @@
  "compute": {
   "B_full_FE": 44677249.12770857,
   "cap_gpu_hours": 40,
-  "gpu_busy_hours": 25.3,
+  "gpu_busy_hours": 30.1,
   "unit": "forward-equivalents per image (CUDA-graph GPU time)"
  },
  "date": "2026-10-01",
@@ -26,6 +26,62 @@
   }
  },
  "patience_lambda0_criterion": "not met (best 4x train agreement A5-6 89.54%; A1-7 87.28%)",
+ "posthoc_amendment11": {
+  "budget": "4x B_full",
+  "label": "POST-HOC exploratory; decision rule closed",
+  "lambda": 0,
+  "replication_criterion": "both new A5-6 seeds >= 80% validation agreement: MET (86.10%, 84.22%)",
+  "runs": {
+   "A1-7-tau4_lam0_s0_4": {
+    "test_agreement_posthoc": 0.7978000044822693,
+    "test_kl_posthoc": 0.22405119240283966,
+    "train_agreement_50k": 0.8584599494934082,
+    "val_agreement": 0.8023999929428101
+   },
+   "A1-7_lam0_s0_4": {
+    "test_agreement_posthoc": 0.7211999893188477,
+    "test_kl_posthoc": 0.45481860637664795,
+    "train_agreement_50k": 0.8727799654006958,
+    "val_agreement": 0.7321999669075012
+   },
+   "A1-7_lam0_s1_4": {
+    "test_agreement_posthoc": 0.7211999893188477,
+    "test_kl_posthoc": 0.4612070322036743,
+    "train_agreement_50k": 0.8731199502944946,
+    "val_agreement": 0.7275999784469604
+   },
+   "A1MSE-1_lam0_s0_4": {
+    "test_agreement_posthoc": 0.7437999844551086,
+    "test_kl_posthoc": 0.3797721862792969,
+    "train_agreement_50k": 0.8036199808120728,
+    "val_agreement": 0.7475999593734741
+   },
+   "A2-3_lam0_s0_4": {
+    "test_agreement_posthoc": 0.7279999852180481,
+    "test_kl_posthoc": 0.431930273771286,
+    "train_agreement_50k": 0.8690199851989746,
+    "val_agreement": 0.7346000075340271
+   },
+   "A5-6_lam0_s0_4": {
+    "test_agreement_posthoc": 0.8543999791145325,
+    "test_kl_posthoc": 0.12097621709108353,
+    "train_agreement_50k": 0.8954399824142456,
+    "val_agreement": 0.8501999974250793
+   },
+   "A5-6_lam0_s1_4": {
+    "test_agreement_posthoc": 0.8547999858856201,
+    "test_kl_posthoc": 0.10919304192066193,
+    "train_agreement_50k": 0.9021399617195129,
+    "val_agreement": 0.8610000014305115
+   },
+   "A5-6_lam0_s2_4": {
+    "test_agreement_posthoc": 0.8277999758720398,
+    "test_kl_posthoc": 0.15316513180732727,
+    "train_agreement_50k": 0.8792399764060974,
+    "val_agreement": 0.842199981212616
+   }
+  }
+ },
  "repository": "target-space-dream, branch soft-dream-stanton",
  "sd": "sample standard deviation over seeds 0,1,2",
  "selected_configs": {
