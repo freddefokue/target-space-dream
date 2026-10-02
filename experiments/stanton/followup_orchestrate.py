@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run the follow-up of FOLLOWUP_PREREG.md end to end (λ = 0, 4·B_full).
 
-Stage A (parallel): A1-7 seed 2, A1-7-tau2 and A1-7-tau8 seed 0, A5-short seeds 0-2. Then τ is
+Stage A (parallel): A1-7 seed 2, A1-7-tau2, -tau8 and -tau16 seed 0, A5-short seeds 0-2. Then τ is
 selected on validation only, stage B runs the selected τ's seeds 1 and 2, every new run gets the
 50k clean-train evaluation, the test split is evaluated once for all λ = 0 4× runs, and the
 decision rule is applied. Writes ``/workspace/runs/followup.done`` at the end.
@@ -22,6 +22,7 @@ from common import RUNS, git_commit, ledger_add, set_numerics, write_json
 from phase3_orchestrate import HERE, log, run_queue
 
 CONFIGS = "../../configs/stanton"
+TAUS = ("A1-7-tau2", "A1-7-tau4", "A1-7-tau8", "A1-7-tau16")  # τ = 16 added by Amendment F1
 TEST_OUT = RUNS / "test_results_followup.json"
 DECISION_OUT = HERE / "followup_decision.json"
 
@@ -42,7 +43,7 @@ def final(config: str, seed: int) -> dict:
 def select_tau() -> str:
     """Highest seed-0 validation agreement; ties within 0.1 pp go to the lower validation KL."""
 
-    candidates = [(c, final(c, 0)) for c in ("A1-7-tau2", "A1-7-tau4", "A1-7-tau8")]
+    candidates = [(c, final(c, 0)) for c in TAUS]
     ordered = sorted(candidates, key=lambda item: -item[1]["val_agreement"])
     best = ordered[0][1]["val_agreement"]
     tied = [item for item in ordered if best - item[1]["val_agreement"] <= 0.001]
@@ -58,7 +59,7 @@ def select_tau() -> str:
 def test_models(tau_config: str) -> list[str]:
     runs = [name("A1-7", s) for s in (0, 1, 2)] + [name("A2-3", 0)]
     runs += [name("A5-6", s) for s in (0, 1, 2)] + [name("A1MSE-1", 0)]
-    runs += [name(c, 0) for c in ("A1-7-tau2", "A1-7-tau4", "A1-7-tau8")]
+    runs += [name(c, 0) for c in TAUS]
     runs += [name(tau_config, s) for s in (1, 2)]
     runs += [name("A5-short", s) for s in (0, 1, 2)]
     return runs
@@ -134,14 +135,36 @@ def decide(test: dict, tau_config: str) -> dict:
     return decision
 
 
+def queue_running(queue: str) -> bool:
+    output = subprocess.run(["pgrep", "-f", f"run_queue.py .*{queue}.json"], capture_output=True,
+                            text=True).stdout
+    return bool(output.split())
+
+
 def main() -> None:
-    log("follow-up stage A")
-    run_queue("followup_stageA", [job("A1-7", 2), job("A1-7-tau2", 0), job("A1-7-tau8", 0)]
-              + [job("A5-short", s) for s in (0, 1, 2)], 6, 12)
+    stage_a = ([job("A1-7", 2), job("A1-7-tau2", 0), job("A1-7-tau8", 0), job("A1-7-tau16", 0)]
+               + [job("A5-short", s) for s in (0, 1, 2)])
+    if "--attach" in sys.argv:
+        # Amendment F1: the original stage-A queue (without τ = 16) keeps running; start τ = 16
+        # now, wait for both, then resume anything that crashed.
+        log("attach: starting A1-7-tau16 seed 0 alongside the running stage-A queue")
+        path = RUNS / "queues" / "followup_tau16.json"
+        path.write_text(json.dumps([job("A1-7-tau16", 0)], indent=1))
+        with open(RUNS / "logs" / "queue_followup_tau16.log", "a") as handle:
+            process = subprocess.Popen([sys.executable, "run_queue.py", str(path),
+                                        "--concurrency", "1", "--mem-gb", "2"], cwd=HERE,
+                                       stdout=handle, stderr=subprocess.STDOUT)
+        while queue_running("followup_stageA") or process.poll() is None:
+            time.sleep(60)
+        log("stage A and tau16 queues finished; resume pass")
+        run_queue("followup_stageA_resume", stage_a, 7, 14)
+    else:
+        log("follow-up stage A")
+        run_queue("followup_stageA", stage_a, 7, 14)
     tau_config = select_tau()
     log(f"selected fixed temperature: {tau_config}")
     run_queue("followup_stageB", [job(tau_config, s) for s in (1, 2)], 2, 4)
-    new_runs = [name("A1-7", 2), name("A1-7-tau2", 0), name("A1-7-tau8", 0)]
+    new_runs = [name("A1-7", 2)] + [name(c, 0) for c in TAUS if c != "A1-7-tau4"]
     new_runs += [name("A5-short", s) for s in (0, 1, 2)] + [name(tau_config, s) for s in (1, 2)]
     missing = [r for r in new_runs if not (RUNS / r / "final.json").exists()]
     if missing:
