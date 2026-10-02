@@ -40,9 +40,9 @@ temperature 1.
 
 1. **A1-7 (τ = 1)**, seed 2 (seeds 0 and 1 exist). Baseline spread; not part of the rule.
 2. **Fixed temperature**: A1-7 with loss `τ²·KL(softmax(f_T/τ) ‖ softmax(f_S/τ))` (Hinton
-   scaling), no annealing; configs `A1-7-tau2`, `A1-7-tau4` (existing run), `A1-7-tau8`.
-   τ ∈ {2, 8} at seed 0.
-   **Selection of τ (validation only):** among τ ∈ {2, 4, 8}, the highest seed-0 validation
+   scaling), no annealing; configs `A1-7-tau2`, `A1-7-tau4` (existing run), `A1-7-tau8`, `A1-7-tau16`.
+   τ ∈ {2, 8, 16} at seed 0 (τ = 16 added by Amendment F1).
+   **Selection of τ (validation only):** among τ ∈ {2, 4, 8, 16}, the highest seed-0 validation
    agreement at the end of `4·B_full`; ties within 0.1 pp go to the lower validation KL. Then
    the selected τ runs seeds 1 and 2. If τ = 4 is selected, its existing seed-0 run counts as
    seed 0.
@@ -71,7 +71,7 @@ Secondary, descriptive only: A5-short versus A5-6 (same arithmetic, no verdict),
 
 Evaluated once, at the end, after all runs have finished and τ has been selected, for all λ = 0
 `4·B_full` runs: A1-7 seeds 0–2, A2-3 seed 0, A5-6 seeds 0–2, A1MSE-1 seed 0, the fixed-τ runs
-(τ = 2, 4, 8 seed 0 and the selected τ's seeds 1 and 2), and A5-short seeds 0–2. Output:
+(τ = 2, 4, 8, 16 seed 0 and the selected τ's seeds 1 and 2), and A5-short seeds 0–2. Output:
 `/workspace/runs/test_results_followup.json`. The script refuses to run twice.
 
 ## Budget
@@ -85,3 +85,15 @@ projection would exceed 50.
 `RESULTS_FOLLOWUP.md`: per-seed validation, 50k train and test values for every run; agreement,
 train agreement and train KL against compute; the τ selection table; the decision with its
 arithmetic; the secondary comparisons; and failure modes. The backup is updated at the end.
+
+## Amendments
+
+### Amendment F1 (2026-10-02, before any follow-up result existed; requested by Fred)
+
+τ = 16 (seed 0, same τ² scaling, config `A1-7-tau16`) is added to the fixed-temperature sweep,
+and τ is selected among {2, 4, 8, 16} by the same validation rule. Fred's stated reason: Frank &
+Davis (2026) report that large fixed temperatures (τ ≥ 10) are often best with long training.
+(I have not checked that reference.) At the time of writing, the stage-A runs had been running
+for about 15 minutes; their intermediate logs had not been inspected and no run had finished.
+Cost: one more 4× run (≈1 GPU-h), projected total ≈39 of 50 GPU-h.
+
