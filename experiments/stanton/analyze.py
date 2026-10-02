@@ -397,6 +397,43 @@ def amendment11_figure() -> Path | None:
     return path
 
 
+def followup_figure() -> Path | None:
+    """Follow-up (FOLLOWUP_PREREG.md): λ = 0, 4×; main arms by seed, and the τ sweep at seed 0."""
+
+    main = [("A1-7", "A1-7 τ=1", 0), ("A1-7-tau8", "fixed τ=8", 7), ("A5-6", "A5-6", 4),
+            ("A5-short", "A5-short", 6)]
+    sweep = [("A1-7-tau2", "τ=2", "#86b6ef"), ("A1-7-tau4", "τ=4", "#3987e5"),
+             ("A1-7-tau8", "τ=8", "#1c5cab"), ("A1-7-tau16", "τ=16", "#0d366b")]
+    keys = (("val_agreement", "validation agreement"), ("train50k_agreement", "train agreement (50k)"),
+            ("train50k_kl", "train KL(p_T ‖ p_S) (50k)"))
+    if not all((RUNS / f"{c}_lam0_s{s}_4" / "final.json").exists()
+               for c, _, _ in main for s in (0, 1, 2)):
+        return None
+    figure, axes = plt.subplots(2, 3, figsize=(12, 6.6))
+    for row, entries in ((0, main), (1, sweep)):
+        for config, label, colour in entries:
+            seeds = (0, 1, 2) if row == 0 else (0,)
+            for seed in seeds:
+                run = load_run(RUNS / f"{config}_lam0_s{seed}_4")
+                color = CATEGORICAL[colour] if row == 0 else colour
+                for axis, (key, title) in zip(axes[row], keys):
+                    rows = [r for r in run["rows"] if key in r]
+                    axis.plot([4 * r["fraction"] for r in rows], [r[key] for r in rows],
+                              color=color, linestyle=("-", "--", ":")[seed],
+                              label=f"{label} s{seed}" if row == 0 else label)
+                    axis.set_title(title + (" (seeds 0–2)" if row == 0 else " (τ sweep, seed 0)"),
+                                   fontsize=9)
+                    axis.set_xlabel("compute (multiples of B_full)")
+        axes[row][2].set_yscale("log")
+        axes[row][0].legend(fontsize=6.5, ncol=2 if row == 0 else 1)
+    figure.suptitle("Follow-up: λ = 0, 4× budget (FOLLOWUP_PREREG.md)", x=0.01, ha="left")
+    figure.tight_layout()
+    path = FIGURES / "followup_lambda0_4x.png"
+    figure.savefig(path, dpi=150)
+    plt.close(figure)
+    return path
+
+
 def handoff_table() -> None:
     """Hand-off diagnostic: endpoint before, and after both lr variants (validation, 50k train)."""
 
@@ -462,7 +499,7 @@ def figures() -> None:
     FIGURES.mkdir(exist_ok=True)
     style()
     paths = [tuning_distance_figure(), *sweep_figures(), train_agreement_figure(),
-             patience_figure(), test_figure(), amendment11_figure()]
+             patience_figure(), test_figure(), amendment11_figure(), followup_figure()]
     print("\n".join(str(path) for path in paths if path))
 
 

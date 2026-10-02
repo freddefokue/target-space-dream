@@ -1,11 +1,58 @@
 {
  "compute": {
   "B_full_FE": 44677249.12770857,
-  "cap_gpu_hours": 40,
-  "gpu_busy_hours": 30.1,
+  "cap_gpu_hours": 50,
+  "gpu_busy_hours": 39.1,
   "unit": "forward-equivalents per image (CUDA-graph GPU time)"
  },
  "date": "2026-10-01",
+ "followup_annealing_vs_fixed_tau": {
+  "budget": "4x B_full",
+  "diff_pp_A5_minus_tau8": -1.8866658210754395,
+  "lambda": 0,
+  "prereg": "FOLLOWUP_PREREG.md",
+  "selected_fixed_tau": 8,
+  "test_agreement": {
+   "A1-7 (tau = 1)": {
+    "mean": 0.721999982992808,
+    "sd": 0.0013856296890330483,
+    "values": [
+     0.7211999893188477,
+     0.7211999893188477,
+     0.7235999703407288
+    ]
+   },
+   "A1-7-tau8": {
+    "mean": 0.8645333051681519,
+    "sd": 0.014807217802858296,
+    "values": [
+     0.8499999642372131,
+     0.8795999884605408,
+     0.8639999628067017
+    ]
+   },
+   "A5-6": {
+    "mean": 0.8456666469573975,
+    "sd": 0.015474283605663164,
+    "values": [
+     0.8543999791145325,
+     0.8547999858856201,
+     0.8277999758720398
+    ]
+   },
+   "A5-short": {
+    "mean": 0.8541333079338074,
+    "sd": 0.014843627677575707,
+    "values": [
+     0.8667999505996704,
+     0.8377999663352966,
+     0.8578000068664551
+    ]
+   }
+  },
+  "two_sd_pool_pp": 3.02888478542773,
+  "verdict": "soft targets plus patience suffice"
+ },
  "model": "ResNet20GN1 teacher and student",
  "outcomes": {
   "0": {

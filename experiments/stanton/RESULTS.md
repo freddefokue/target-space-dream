@@ -302,3 +302,12 @@ anneals over 2·`B_full`, which is a different schedule, not just more steps); a
 seed-0 4× A5-6 run did *not* improve over 1× (91.4% vs 93.4%, Amendment 6).
 
 Compute for Amendment 11: ≈4.9 GPU-h. GPU busy-clock total: **30.1 GPU-h of 40**.
+
+## Pointer (2026-10-02): separate follow-up
+
+A separate, preregistered follow-up (`FOLLOWUP_PREREG.md`, `RESULTS_FOLLOWUP.md`) tested whether
+annealing beats the best fixed temperature at λ = 0 with `4·B_full`. Result: **soft targets plus
+patience suffice**. Fixed τ = 8 reached 86.45 ± 1.48% test agreement versus 84.57 ± 1.55% for
+A5-6; annealing length did not matter. This revises reading 3 of the Amendment 11 addendum
+above ("annealing adds the rest"): with the temperature tuned, annealing adds nothing.
+

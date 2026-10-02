@@ -1,0 +1,22 @@
+{
+  "candidates": {
+    "A1-7-tau16": {
+      "val_agreement": 0.8281999826431274,
+      "val_kl": 0.1710691899061203
+    },
+    "A1-7-tau2": {
+      "val_agreement": 0.740399956703186,
+      "val_kl": 0.4061395525932312
+    },
+    "A1-7-tau4": {
+      "val_agreement": 0.8023999929428101,
+      "val_kl": 0.21999555826187134
+    },
+    "A1-7-tau8": {
+      "val_agreement": 0.8619999885559082,
+      "val_kl": 0.10641483962535858
+    }
+  },
+  "rule": "max seed-0 val agreement; ties within 0.1 pp -> lower val KL",
+  "selected": "A1-7-tau8"
+}
