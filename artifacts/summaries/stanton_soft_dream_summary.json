@@ -2,7 +2,7 @@
  "compute": {
   "B_full_FE": 44677249.12770857,
   "cap_gpu_hours": 50,
-  "gpu_busy_hours": 39.1,
+  "gpu_busy_hours": 39.8,
   "unit": "forward-equivalents per image (CUDA-graph GPU time)"
  },
  "date": "2026-10-01",
@@ -73,6 +73,17 @@
   }
  },
  "patience_lambda0_criterion": "not met (best 4x train agreement A5-6 89.54%; A1-7 87.28%)",
+ "posthoc_F2_tau8_1x": {
+  "budget": "1x B_full",
+  "finding": "soft targets help only with extra compute: tau=8 at 1x ~= tau=1 at 1x (72.25 vs 71.13%), at 4x 86.45 vs 72.20%",
+  "label": "POST-HOC (follow-up Amendment F2)",
+  "lambda": 0,
+  "test_agreement_per_seed": [
+   0.7181999683380127,
+   0.72079998254776,
+   0.7283999919891357
+  ]
+ },
  "posthoc_amendment11": {
   "budget": "4x B_full",
   "label": "POST-HOC exploratory; decision rule closed",
