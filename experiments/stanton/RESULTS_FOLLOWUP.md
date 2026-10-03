@@ -98,3 +98,58 @@ Fidelity and accuracy separate again: the high-fidelity students (τ = 8, A5-6, 
 
 Follow-up: ≈9.0 GPU-h (9 new 4× runs). GPU busy-clock total: **39.1 GPU-h of the raised cap of
 50**.
+
+
+## Addendum (2026-10-03): POST-HOC fixed τ = 8 at 1× compute, and the 2×2 view (Amendment F2)
+
+**Post-hoc diagnostic**, recorded in `FOLLOWUP_PREREG.md` (Amendment F2) before its runs started;
+no decision rule. New runs: fixed τ = 8 (τ² scaling) at λ = 0, `1·B_full`, seeds 0, 1, 2, with one
+post-hoc test evaluation (`/workspace/runs/test_results_posthoc_tau8_1x.json`).
+
+Fixed τ = 8, λ = 0:
+
+| budget | seeds | val agreement | train agreement (50k) | test agreement | test acc |
+|---|---|---|---|---|---:|
+| 1× `B_full` | 0, 1, 2 | 73.22, 73.06, 73.40% | 78.79, 78.22, 78.27% | **71.82, 72.08, 72.84%** (72.25 ± 0.53) | 65.4% |
+| 4× `B_full` | 0, 1, 2 | 86.20, 89.08, 86.70% | 90.55, 92.62, 90.72% | **85.00, 87.96, 86.40%** (86.45 ± 1.48) | 65.6% |
+
+### 2×2 tables: (no soft targets, soft targets) × (1×, 4×), λ = 0
+
+Each cell: test agreement mean ± sd (per seed), then validation and 50k train agreement (mean ±
+sd), and the seeds. Sources: 1× A1-7, A1-MSE and A5-6 from the single preregistered test
+evaluation of the original study; 1× τ = 8 from the post-hoc evaluation above; all 4× runs from
+the follow-up's single test evaluation.
+
+**KL family** (loss: KL; soft = fixed τ = 8 for the whole run, τ² scaling)
+
+| | 1× `B_full` | 4× `B_full` |
+|---|---|---|
+| no soft targets: A1-7 (τ = 1) | test **71.13 ± 0.14** (71.1, 71.0, 71.3)<br>val 71.35 ± 0.15 · train 84.49 ± 0.12<br>seeds 0, 1, 2 | test **72.20 ± 0.14** (72.1, 72.1, 72.4)<br>val 72.77 ± 0.44 · train 87.31 ± 0.03<br>seeds 0, 1, 2 |
+| soft targets: fixed τ = 8 | test **72.25 ± 0.53** (71.8, 72.1, 72.8)<br>val 73.23 ± 0.17 · train 78.43 ± 0.32<br>seeds 0, 1, 2 | test **86.45 ± 1.48** (85.0, 88.0, 86.4)<br>val 87.33 ± 1.54 · train 91.29 ± 1.15<br>seeds 0, 1, 2 |
+
+**MSE family** (loss: logit MSE; soft phase = Annealing-KD's Φ(T)-scaled targets, T = 10 → 1)
+
+| | 1× `B_full` | 4× `B_full` |
+|---|---|---|
+| no soft phase: A1-MSE | test **71.84 ± 0.59** (72.2, 72.2, 71.2)<br>val 71.77 ± 0.27 · train 76.64 ± 0.21<br>seeds 0, 1, 2 | test **74.38** (74.4)<br>val 74.76 · train 80.36<br>seeds 0 |
+| soft phase: A5-6 (annealing over 0.5·B_full at 1×, over 2·B_full at 4×) | test **72.77 ± 0.87** (73.8, 72.1, 72.5)<br>val 72.91 ± 0.12 · train 77.37 ± 0.10<br>seeds 0, 1, 2 | test **84.57 ± 1.55** (85.4, 85.5, 82.8)<br>val 85.11 ± 0.94 · train 89.23 ± 1.18<br>seeds 0, 1, 2 |
+| soft phase: A5-short (annealing over 0.5·B_full, 4× only) | – | test **85.41 ± 1.48** (86.7, 83.8, 85.8)<br>val 86.77 ± 1.14 · train 90.22 ± 1.02<br>seeds 0, 1, 2 |
+
+Reading:
+
+- **Soft targets help only with the extra compute.** At 1× the soft-target arms are within about 1 pp
+  of their no-soft counterparts (KL: 72.25 vs 71.13%; MSE: 72.77 vs 71.84%). At 4× they gain
+  12–14 pp (KL: 86.45 vs 72.20%; MSE: 84.6–85.4 vs 74.38%), while the no-soft arms gain only
+  1–2.5 pp from 4× compute. The effect is an interaction of soft targets and training length,
+  not a main effect of either.
+- At 1×, soft targets *lower* train agreement (τ = 8: 78.4% vs 84.5% for τ = 1), i.e. the soft
+  student matches the teacher's top-1 on the training images less well early on while matching
+  on validation equally; the advantage appears only later in training (the curves in
+  `figures/followup_lambda0_4x.png` separate after ≈2× compute).
+- In the MSE family, the 4× soft-phase arms anneal over 0.5·`B_full` (A5-short, the same absolute
+  annealing length as the 1× A5-6 run) or over 2·`B_full` (A5-6); both reach ≈85%, so what matters
+  is the training after the soft phase, not the length of the soft phase.
+- Caveats: A1-MSE at 4× has one seed; 1× and 4× runs have different (stretched) schedules; τ = 8
+  was selected at 4×, not at 1×.
+
+Compute for Amendment F2: ≈0.7 GPU-h. GPU busy-clock total: **39.8 GPU-h of 50**.
