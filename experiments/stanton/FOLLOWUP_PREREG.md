@@ -97,3 +97,12 @@ Davis (2026) report that large fixed temperatures (τ ≥ 10) are often best wit
 for about 15 minutes; their intermediate logs had not been inspected and no run had finished.
 Cost: one more 4× run (≈1 GPU-h), projected total ≈39 of 50 GPU-h.
 
+### Amendment F2 (2026-10-03, POST-HOC diagnostic; requested by Fred; recorded before its runs started)
+
+Post-hoc, motivated by the follow-up result; no decision rule. Fixed τ = 8 (`A1-7-tau8`, τ²
+scaling) at λ = 0, `1·B_full`, seeds 0, 1, 2. Reported: validation, 50k train and test agreement
+next to the 4× runs (one post-hoc test evaluation of these three models,
+`/workspace/runs/test_results_posthoc_tau8_1x.json`), and a 2×2 table {no soft phase, soft phase}
+× {1×, 4×} for the MSE family (A1-MSE; A5-6 at 1×; A5-short and A5-6 at 4×) and the KL family
+(A1-7; τ = 8 at 1× and 4×), with seeds and spreads. Cost ≈1 GPU-h; projected total ≈40 of 50.
+
